@@ -187,7 +187,7 @@ body.welcome .content{padding:0;max-width:none}
 const $=s=>document.querySelector(s);
 const e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ds=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-const TODAY=new Date(2026,10,21),TODAYS=ds(TODAY),MON=ds(new Date(2026,10,16));
+const TODAY=new Date(),TODAYS=ds(TODAY),MON=(()=>{const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7));return ds(d)})();
 const ago=n=>{const d=new Date(TODAY);d.setDate(d.getDate()-n);return ds(d)};
 const LAST7=[6,5,4,3,2,1,0].map(ago);
 const DNAME=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -464,6 +464,17 @@ function loadState(){
     if(d.error){S.msg=d.error;return false}
     REMOTE=d;
     S.notes=d.notices.map(n=>({text:n.text,to:'both',d:n.at}));
+    Object.keys(SCHED).forEach(k=>delete SCHED[k]);Object.assign(SCHED,d.schedule);
+    Object.keys(TGT).forEach(k=>delete TGT[k]);Object.assign(TGT,d.targets);
+    ENTRIES.length=0;
+    const cats=Object.keys(CATS);
+    d.entries.forEach(x=>{
+      const low=String(x.by||'').toLowerCase();
+      const u=x.c==='Analyze Data'?'prompt':(low==='bella'||low==='qaulan'?low:'prompt');
+      const v=Object.assign({},x.v);
+      if(x.c==='Analyze Data'&&x.date===TODAYS&&d.picture)v.pic={src:d.picture,name:''};
+      ENTRIES.push({id:x.row*100+cats.indexOf(x.c)+1,d:x.date,u:u,c:x.c,v:v,row:x.row,sd:x.sd||undefined});
+    });
     return true;
   }).catch(()=>{S.msg='Could not reach the server. Check your connection.';return false});
 }
@@ -482,7 +493,7 @@ function onCred(resp){
     if(!ok){S.signing=true;render();return}
     const who=REMOTE.user.toLowerCase();
     if(S.wantMode&&S.wantMode!=='combined'&&S.wantMode!==who){S.msg='This is '+REMOTE.user+"'s account. Choose "+REMOTE.user+' to continue.';ID_TOKEN=null;S.signing=true;render();return}
-    S.signing=false;S.started=true;S.mode=who;S.by=who;S.screen='home';S.msg='';render();
+    S.signing=false;S.started=true;S.mode=S.wantMode==='combined'?'combined':who;S.by=who;S.screen='home';S.msg='';render();
   });
 }
 const REVIEW_CATS=['Idiom','Vocabulary','Phrasal Verb','Slang'];
@@ -580,6 +591,7 @@ document.addEventListener('click',ev=>{
   const t=ev.target.closest('[data-a]');if(!t)return;
   const a=t.dataset.a,v=t.dataset.v;
   if(!['saveset','discardset','cancelnav'].includes(a)&&isDirty()&&S.screen==='settings'&&(a==='switch'||(a==='screen'&&v!=='settings'))){S.askNav={a,v};render();return;}
+  if(a==='saveset'&&REMOTE){ensureDraft();const sd=S.dS,dt=S.dT;api({action:'saveSchedule',schedule:sd,targets:dt}).then(r=>{if(r.error){S.msg=r.error;render();return}S.dS=null;S.dT=null;S.msg='Changes saved to the sheet.';return loadState().then(()=>{if(S.askNav){const n=S.askNav;S.askNav=null;performNav(n)}render()})});return;}
   if(a==='saveset'){ensureDraft();Object.keys(S.dS).forEach(d=>SCHED[d]=S.dS[d].slice());Object.keys(S.dT).forEach(c=>TGT[c]=S.dT[c]);S.dS=null;S.dT=null;S.msg='Changes saved.';if(S.askNav){const n=S.askNav;S.askNav=null;performNav(n);}}
   else if(a==='discardset'){S.dS=null;S.dT=null;S.msg='Changes discarded.';if(S.askNav){const n=S.askNav;S.askNav=null;performNav(n);}}
   else if(a==='cancelnav'){S.askNav=null;}
@@ -610,6 +622,7 @@ document.addEventListener('click',ev=>{
   else if(a==='backtoday'){S.lateDay=null;S.f={};S.gen=null;}
   else if(a==='day'){S.day=v;S.f={};S.gen=null;}
   else if(a==='logcat'){S.logCat=v;S.fullTbl=false;}
+  else if(a==='ans'&&REMOTE){const en=ENTRIES.find(x=>x.id===id);const val=(document.getElementById('a'+id)||{value:''}).value.trim();if(!en||!val){S.msg='Write your answer first.';}else{api({action:'answer',cat:en.c,row:en.row,text:val}).then(r=>{S.msg=r.error||'Answer saved.';return loadState()}).then(render);return;}}
   else if(a==='ans'){const id=+t.dataset.id,k=t.dataset.k;const val=(document.getElementById('a'+id)||{value:''}).value.trim();const en=ENTRIES.find(x=>x.id===id);if(en&&val){en.v[k]=val;note(NAME[S.by]+' answered an entry in '+en.c,en.u);S.msg='Answer saved ';}}
   render();
 });
@@ -620,7 +633,9 @@ document.addEventListener('input',ev=>{
 document.addEventListener('change',ev=>{
   if(ev.target.id==='bt'){S.bt=ev.target.value;render();}
   if(ev.target.dataset&&ev.target.dataset.tg){ensureDraft();S.dT[ev.target.dataset.tg]=Math.max(0,parseInt(ev.target.value,10)||0);render();}
-  if(ev.target.id==='picfile'){const f=ev.target.files[0];if(f){const rd=new FileReader();rd.onload=()=>{promptRow().v.pic={src:rd.result,name:f.name};S.msg='Picture uploaded. Both of you see the same one.';render();};rd.readAsDataURL(f);}}
+  if(ev.target.id==='picfile'){const f=ev.target.files[0];if(f){const rd=new FileReader();rd.onload=()=>{
+    if(REMOTE){const data=String(rd.result).split(',')[1];api({action:'picture',name:f.name,mime:f.type||'image/png',data:data}).then(r=>{S.msg=r.error||'Picture uploaded. Both of you see the same one.';return loadState()}).then(render);return;}
+    promptRow().v.pic={src:rd.result,name:f.name};S.msg='Picture uploaded. Both of you see the same one.';render();};rd.readAsDataURL(f);}}
 });
 document.addEventListener('keydown',ev=>{if(ev.target.id==='bq'&&ev.key==='Enter'){S.bq=ev.target.value;render();}});
 render();
