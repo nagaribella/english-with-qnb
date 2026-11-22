@@ -2,6 +2,13 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>English with QnB</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="QnB">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#B9A58F">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <style>
 :root{--a:#ff7eb6;--bg:linear-gradient(160deg,#ffe3f0,#fff8fc 55%,#f3ecff);--card:#fff;--ink:#3b1830;--mut:#9a6b87;--line:#f5d6e6;--soft:#fde6f1}
 [data-mode=qaulan]{--a:#6fa8dc;--bg:linear-gradient(160deg,#eaf4fc,#f5faff 60%);--card:#ffffff;--ink:#14324f;--mut:#6b8aa6;--line:#d3e4f3;--soft:#e4f0fa}
@@ -175,7 +182,7 @@ body.welcome .content{padding:0;max-width:none}
 <body data-mode="bella">
 <div class="shell">
   <aside class="side">
-    <div class="toprow"><div class="logo"><svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true"><rect width="40" height="40" rx="12" style="fill:var(--a)"/><path d="M8 11h24a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-9l-5 4v-4H8a3 3 0 0 1-3-3V14a3 3 0 0 1 3-3z" style="fill:#fff"/><text x="20" y="24.5" text-anchor="middle" font-family="Poppins,system-ui,sans-serif" font-weight="800" font-size="9.5" letter-spacing="0.3" style="fill:var(--a)">QnB</text></svg><div><div class="brand">English with QnB</div><div class="tagline">Learn and grow every day!</div></div></div><button class="bell" id="bell" data-a="screen" data-v="notes" aria-label="Notifications"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16V11a6 6 0 0 0-12 0v5l-2 2h16z"/><path d="M10 21a2 2 0 0 0 4 0"/></svg><span class="badge" id="badge"></span></button></div>
+    <div class="toprow"><div class="logo"><svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true"><rect width="40" height="40" rx="12" style="fill:#B9A58F"/><path d="M8 11h24a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-9l-5 4v-4H8a3 3 0 0 1-3-3V14a3 3 0 0 1 3-3z" style="fill:#fff"/><text x="20" y="24.5" text-anchor="middle" font-family="Poppins,system-ui,sans-serif" font-weight="800" font-size="9.5" letter-spacing="0.3" style="fill:#B9A58F">QnB</text></svg><div><div class="brand">English with QnB</div><div class="tagline">Learn and grow every day!</div></div></div><button class="bell" id="bell" data-a="screen" data-v="notes" aria-label="Notifications"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16V11a6 6 0 0 0-12 0v5l-2 2h16z"/><path d="M10 21a2 2 0 0 0 4 0"/></svg><span class="badge" id="badge"></span></button></div>
     <div id="date" class="mut"></div>
     <div id="acct"></div>
     <nav class="tabs" id="tabs"></nav>
@@ -198,9 +205,9 @@ const MODE_LABEL={bella:'Bella',qaulan:'Qaulan',combined:'Combined'};
 
 // Weekly schedule and targets, copied from the Schedule tab
 const SCHED={Monday:['Idiom','Analyze Data','Vocabulary','Grammar'],Tuesday:['Slang','Phrasal Verb','Vocabulary'],Wednesday:['Idiom','Phrasal Verb','Vocabulary'],Thursday:['Phrasal Verb','Analyze Data','Vocabulary'],Friday:['Slang','Idiom','Vocabulary'],Saturday:['Slang','Movie','Vocabulary'],Sunday:['Vocabulary','Expression','Grammar']};
-const TGT={Idiom:5,'Analyze Data':1,Journal:1,Vocabulary:5,Movie:1,Slang:5,'Phrasal Verb':5,Grammar:5,Expression:5};
+const TGT={Idiom:5,'Analyze Data':1,Vocabulary:5,Movie:1,Slang:5,'Phrasal Verb':5,Grammar:5,Expression:5};
 // Answer goals as currently typed in DASHBOARD (weekly)
-const ANS_W={Idiom:15,'Analyze Data':2,Journal:7,Vocabulary:70,Movie:0,Slang:15,'Phrasal Verb':15,Grammar:10,Expression:5};
+const ANS_W={Idiom:15,'Analyze Data':2,Vocabulary:70,Movie:0,Slang:15,'Phrasal Verb':15,Grammar:10,Expression:5};
 const DEF_SCHED=JSON.parse(JSON.stringify(SCHED)),DEF_TGT=JSON.parse(JSON.stringify(TGT));
 const DAYS_OF=c=>Object.values(SCHED).filter(a=>a.includes(c)).length;
 
@@ -213,12 +220,11 @@ const CATS={
  'Phrasal Verb':{tab:'PHRASAL VERB',bank:['Phrasal Verb'],gsrc:'word',f:[...DB,['word','Phrasal Verb','in'],['meaning','Meaning','in'],...EXS]},
  Vocabulary:{tab:'VOCABULARY',bank:['Vocabulary'],gsrc:'word',f:[...DB,['word','Vocabulary','in'],['cat','Category','in'],['meaning','Meaning','in'],...EXS]},
  Movie:{tab:'MOVIE',bank:[],gsrc:null,f:[...DB,['title',"Movie's Title",'in'],['review','Review','in']]},
- Grammar:{tab:'GRAMMAR',bank:[],gsrc:'vocab',f:[...DB,['word','Grammar','in'],['vocab','Vocabulary','in'],['cat','Category','in'],['meaning','Meaning','in'],...EXS]},
+ Grammar:{tab:'GRAMMAR',bank:[],gsrc:null,f:[...DB,['word','Grammar Name','in'],['rules','Rules','in'],['when','When to Use','in'],...EXS]},
  Expression:{tab:'EXPRESSION',bank:['Expression'],gsrc:'word',f:[...DB,['ung','Ungkapan','in'],['meaning','Ekspresi','in'],['word','Expression','in'],...EXS]},
- Journal:{tab:'JOURNAL',bank:[],gsrc:null,f:[...DB,['qJ',"Qaulan's Journal",'own'],['bJ',"Bella's Journal",'own']]},
- 'Analyze Data':{tab:'ANALYZE DATA',bank:[],gsrc:null,f:[...DB,['qA',"Qaulan's Analysis",'own'],['bA',"Bella's Analysis",'own']]}
+  'Analyze Data':{tab:'ANALYZE DATA',bank:[],gsrc:null,f:[...DB,['qA',"Qaulan's Analysis",'own'],['bA',"Bella's Analysis",'own']]}
 };
-const CAT_ORDER=Object.keys(CATS).filter(c=>c!=='Journal');
+const CAT_ORDER=Object.keys(CATS);
 const isOwn=k=>/^(q|b)(Ex|J|A)$/.test(k);
 const ownerOf=k=>k[0]==='q'?'qaulan':'bella';
 const ownKey=(c,u)=>CATS[c].f.map(x=>x[0]).find(k=>isOwn(k)&&ownerOf(k)===u);
@@ -253,7 +259,7 @@ const bar=p=>`<span class="bar"><i style="width:${Math.min(100,p)}%"></i></span>
 const hex=a=>Math.round(a*255).toString(16).padStart(2,'0');
 const donut=(p,col,sz=120)=>{const r=50,c=2*Math.PI*r,v=Math.min(100,p);return `<svg width="${sz}" height="${sz}" viewBox="0 0 130 130"><circle cx="65" cy="65" r="${r}" fill="none" style="stroke:var(--soft)" stroke-width="14"/><circle cx="65" cy="65" r="${r}" fill="none" style="stroke:${col}" stroke-width="14" stroke-linecap="round" stroke-dasharray="${(c*v/100).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 65 65)"/><text x="65" y="73" text-anchor="middle" font-size="24" font-weight="900" style="fill:var(--ink)">${Math.round(p)}%</text></svg>`};
 const spark=(vals,col)=>{const w=90,h=28,mx=Math.max(1,...vals);const y=v=>(h-3-(v/mx)*(h-6)).toFixed(1);const pts=vals.map((v,i)=>`${(i*w/(vals.length-1)).toFixed(1)},${y(v)}`).join(' ');return `<svg width="${w}" height="${h}"><polyline points="${pts}" fill="none" style="stroke:${col}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg>`};
-const COL={Idiom:'#ff7eb6',Vocabulary:'#7c9cff',Slang:'#ffb547','Phrasal Verb':'#8fc9a0',Journal:'#4ed0a0',Movie:'#ff8a65',Grammar:'#26c6da',Expression:'#ec407a','Analyze Data':'#9ccc65'};
+const COL={Idiom:'#ff7eb6',Vocabulary:'#7c9cff',Slang:'#ffb547','Phrasal Verb':'#8fc9a0',Movie:'#ff8a65',Grammar:'#26c6da',Expression:'#ec407a','Analyze Data':'#9ccc65'};
 const fmtDate=d=>d===TODAYS?'Today':d;
 
 // ---- IELTS-style pictures for Analyze Data (one per day, same picture for both) ----
@@ -379,13 +385,55 @@ function inputToday(){
 }
 
 const isMobile=()=>window.matchMedia('(max-width:760px)').matches;
+// Irregular verb forms (base, -s, -ing, past, past participle)
+const IRR={be:['is','am','are','was','were','been','being'],have:['has','had','having'],do:['does','did','done','doing'],go:['goes','went','gone','going'],
+ get:['gets','got','gotten','getting'],make:['makes','made','making'],take:['takes','took','taken','taking'],give:['gives','gave','given','giving'],
+ come:['comes','came','coming'],fall:['falls','fell','fallen','falling'],break:['breaks','broke','broken','breaking'],run:['runs','ran','running'],
+ see:['sees','saw','seen','seeing'],know:['knows','knew','known','knowing'],think:['thinks','thought','thinking'],bring:['brings','brought','bringing'],
+ buy:['buys','bought','buying'],catch:['catches','caught','catching'],teach:['teaches','taught','teaching'],feel:['feels','felt','feeling'],
+ keep:['keeps','kept','keeping'],leave:['leaves','left','leaving'],lose:['loses','lost','losing'],pay:['pays','paid','paying'],
+ say:['says','said','saying'],sell:['sells','sold','selling'],send:['sends','sent','sending'],sit:['sits','sat','sitting'],
+ speak:['speaks','spoke','spoken','speaking'],stand:['stands','stood','standing'],tell:['tells','told','telling'],
+ throw:['throws','threw','thrown','throwing'],understand:['understands','understood','understanding'],wear:['wears','wore','worn','wearing'],
+ win:['wins','won','winning'],write:['writes','wrote','written','writing'],hang:['hangs','hung','hanging'],blow:['blows','blew','blown','blowing'],
+ eat:['eats','ate','eaten','eating'],drink:['drinks','drank','drunk','drinking'],find:['finds','found','finding'],hold:['holds','held','holding'],
+ set:['sets','setting'],put:['puts','putting'],cut:['cuts','cutting'],hit:['hits','hitting'],let:['lets','letting'],read:['reads','reading'],
+ mean:['means','meant','meaning'],feed:['feeds','fed','feeding'],ride:['rides','rode','ridden','riding'],drive:['drives','drove','driven','driving'],forgive:['forgives','forgave','forgiven','forgiving'],meet:['meets','met','meeting'],shake:['shakes','shook','shaken','shaking'],sleep:['sleeps','slept','sleeping'],
+ child:['children'],person:['people'],man:['men'],woman:['women'],foot:['feet'],tooth:['teeth'],mouse:['mice']};
+const escRe=x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+function forms(w){
+  const lw=String(w).toLowerCase(),set=new Set([lw]);
+  (IRR[lw]||[]).forEach(f=>set.add(f));
+  const last=lw.slice(-1),cvc=/[^aeiou][aeiou][^aeiouwxy]$/.test(lw);
+  set.add(lw+'s');
+  if(/(s|x|z|ch|sh|o)$/.test(lw))set.add(lw+'es');
+  if(/[^aeiou]y$/.test(lw)){set.add(lw.slice(0,-1)+'ies');set.add(lw.slice(0,-1)+'ied')}
+  if(/e$/.test(lw)){set.add(lw.slice(0,-1)+'ing');set.add(lw+'d')}else{set.add(lw+'ing');set.add(lw+'ed')}
+  if(cvc){set.add(lw+last+'ing');set.add(lw+last+'ed')}
+  return [...set];
+}
+function kwPattern(kw){
+  return String(kw).trim().split(/\s+/).map(t=>'(?:'+forms(t).map(escRe).sort((a,b)=>b.length-a.length).join('|')+')').join('\\s+');
+}
+function hl(text,kw){
+  const t=String(text??''),k=String(kw||'').trim().replace(/\s+/g,' ');
+  if(!k)return e(t);
+  const re=new RegExp('(?<![A-Za-z])('+kwPattern(k)+')(?![A-Za-z])','gi');
+  let out='',last=0,m;
+  while((m=re.exec(t))){
+    const exact=m[0].replace(/\s+/g,' ').toLowerCase()===k.toLowerCase();
+    out+=e(t.slice(last,m.index))+(exact?'<b>'+e(m[0])+'</b>':'<b class="infl" title="a form of: '+e(k)+'">'+e(m[0])+'</b>');
+    last=m.index+m[0].length;
+  }
+  return out+e(t.slice(last));
+}
 function cellHtml(x,k){
   if(k==='date')return `${fmtDate(x.d)}${x.sd?'<br><small class="mut">late for '+x.sd+'</small>':''}`;
   if(k==='by')return e(NAME[x.u]||'Daily prompt');
   const val=x.v[k];
   if(isOwn(k)||k==='qEx'||k==='bEx'){
     const owner=ownerOf(k);
-    if(String(val||'').trim())return e(val);
+    if(String(val||'').trim())return hl(val,['Idiom','Slang','Phrasal Verb','Vocabulary'].includes(x.c)?x.v.word:'');
     if(owner===S.by&&x.u!==S.by&&x.u!=='prompt')return `<div class="exrow"><input id="a${x.id}" placeholder="Your answer"><button data-a="ans" data-id="${x.id}" data-k="${k}">Save</button></div>`;
     return `<span class="wait">waiting for ${NAME[owner]}</span>`;
   }
@@ -413,7 +461,7 @@ function table(c,rows){
 function log(){
   const rows=ENTRIES.filter(x=>x.c===S.logCat).sort((a,b)=>b.id-a.id);
   const chips=CAT_ORDER.map(c=>`<button class="${S.logCat===c?'on':''}" data-a="logcat" data-v="${c}">${c}</button>`).join('');
-  return `<div class="card"><h3>Full log · ${e(CATS[S.logCat].tab)}</h3><div class="chips">${chips}</div><p class="mut">Each row is one entry. Fill the empty answer box to answer your partner.</p></div><div class="card">${table(S.logCat,rows)}</div>`;
+  return `<div class="card"><h3>Full log · ${e(CATS[S.logCat].tab)}</h3><div class="chips">${chips}</div><p class="mut">Each row is one entry. Fill the empty answer box to answer your partner. Bold = the exact keyword. Underlined = another form of it, such as fell down for fall down.</p></div><div class="card">${table(S.logCat,rows)}</div>`;
 }
 
 // ---- Dashboard (mirrors the DASHBOARD tab: submit and answer blocks) ----
@@ -464,6 +512,7 @@ function loadState(){
     if(d.error){S.msg=d.error;return false}
     REMOTE=d;
     S.notes=d.notices.map(n=>({text:n.text,to:'both',d:n.at}));
+    if(d.words&&d.words.length){BANK.length=0;d.words.forEach(w=>BANK.push(w));}
     Object.keys(SCHED).forEach(k=>delete SCHED[k]);Object.assign(SCHED,d.schedule);
     Object.keys(TGT).forEach(k=>delete TGT[k]);Object.assign(TGT,d.targets);
     ENTRIES.length=0;
@@ -565,7 +614,7 @@ const ICON={
 };
 const svgIcon=k=>`<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>`;
 const visNotes=()=>S.notes.filter(n=>S.mode==='combined'||n.to===S.mode||n.to==='both');
-const LOGO_BIG='<svg viewBox="0 0 40 40" width="72" height="72" aria-hidden="true"><rect width="40" height="40" rx="12" style="fill:var(--a)"/><path d="M8 11h24a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-9l-5 4v-4H8a3 3 0 0 1-3-3V14a3 3 0 0 1 3-3z" style="fill:#fff"/><text x="20" y="24.5" text-anchor="middle" font-family="Poppins,system-ui,sans-serif" font-weight="800" font-size="9.5" letter-spacing="0.3" style="fill:var(--a)">QnB</text></svg>';
+const LOGO_BIG='<svg viewBox="0 0 40 40" width="72" height="72" aria-hidden="true"><rect width="40" height="40" rx="12" style="fill:#B9A58F"/><path d="M8 11h24a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-9l-5 4v-4H8a3 3 0 0 1-3-3V14a3 3 0 0 1 3-3z" style="fill:#fff"/><text x="20" y="24.5" text-anchor="middle" font-family="Poppins,system-ui,sans-serif" font-weight="800" font-size="9.5" letter-spacing="0.3" style="fill:#B9A58F">QnB</text></svg>';
 const MODE_CARDS=[['bella','Bella','Your own learning space','#f7b8d2'],['qaulan','Qaulan','Your own learning space','#a7cdf0'],['combined','Combined','Study together and see both of you','#F8F4EC']];
 function welcomeScreen(){
   if(S.signing)return `<div class="welcome"><div class="wlogo">${LOGO_BIG}</div><h1>Sign in with Google</h1><p class="mut">Only Bella and Qaulan can enter.</p><div id="gbtn" style="margin-top:18px"></div>${S.msg?`<div class="warn" style="margin-top:14px">${e(S.msg)}</div>`:''}<button class="ghostbtn" data-a="backwelcome" style="margin-top:14px">Back</button></div>`;
