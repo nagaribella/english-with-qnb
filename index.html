@@ -178,6 +178,8 @@ body.welcome .content{padding:0;max-width:none}
 .sheet button{width:100%;margin-top:8px}
 .dirty{position:sticky;top:8px;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;background:var(--soft);border-radius:16px;padding:10px 12px;margin-bottom:10px;box-shadow:0 6px 18px rgba(0,0,0,.08)}
 .dirty .pri{width:auto;margin:0;padding:8px 14px}
+#toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(16px);background:var(--ink);color:var(--card);padding:10px 16px;border-radius:999px;opacity:0;transition:opacity .25s,transform .25s;z-index:200;max-width:90%;text-align:center;font-size:14px;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style></head>
 <body data-mode="bella">
 <div class="shell">
@@ -529,7 +531,7 @@ function loadState(){
   }).catch(()=>{S.msg='Could not reach the server. Check your connection.';return false});
 }
 function api(body){
-  return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({token:ID_TOKEN},body))}).then(r=>r.json());
+  return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({token:ID_TOKEN},body))}).then(r=>r.json()).catch(err=>({error:'Could not reach the server ('+err.message+'). Check your connection and try again.'}));
 }
 function initGsi(){
   if(!window.google||!google.accounts){setTimeout(initGsi,300);return}
@@ -625,6 +627,11 @@ function acctChip(){
   const name=S.mode==='combined'?'Combined':NAME[S.mode];
   return `<div class="acct"><div class="avatar">${name[0]}</div><div><b>${name}</b><small class="mut">${S.mode==='combined'?'Team mode':'Signed in'}</small></div><button class="ghostbtn" data-a="switch">Switch account</button></div>`;
 }
+function showToast(){
+  let t=document.getElementById('toast');
+  if(!t){t=document.createElement('div');t.id='toast';document.body.appendChild(t)}
+  if(S.msg){t.textContent=S.msg;t.className='show';clearTimeout(window._tt);window._tt=setTimeout(()=>{t.className=''},3500)}
+}
 function render(){
   document.body.dataset.mode=S.started?S.mode:'combined';
   document.body.classList.toggle('welcome',!S.started);
@@ -636,6 +643,7 @@ function render(){
   $('#app').innerHTML={home,input,review:reviewScreen,dash,log,notes:notesScreen,settings:settingsScreen}[S.screen]();
   $('#modal').innerHTML=S.askNav?askHtml():'';
   $('#date').textContent=TODAY.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  showToast();
 }
 document.addEventListener('click',ev=>{
   const t=ev.target.closest('[data-a]');if(!t)return;
