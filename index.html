@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>English with QnB</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{--a:#ff7eb6;--bg:linear-gradient(160deg,#ffe3f0,#fff8fc 55%,#f3ecff);--card:#fff;--ink:#3b1830;--mut:#9a6b87;--line:#f5d6e6;--soft:#fde6f1}
 [data-mode=qaulan]{--a:#6fa8dc;--bg:linear-gradient(160deg,#eaf4fc,#f5faff 60%);--card:#ffffff;--ink:#14324f;--mut:#6b8aa6;--line:#d3e4f3;--soft:#e4f0fa}
@@ -330,6 +331,11 @@ function subtabs(){
   return `<div class="seg">${[['today','Today'],['catch','Catch up'],['answer',`Answer (${n})`]].map(([v,l])=>`<button class="${S.inTab===v?'on':''}" data-a="intab" data-v="${v}">${l}</button>`).join('')}</div>`;
 }
 function answerList(){
+  if(REMOTE){
+    const w=REMOTE.waiting;
+    if(!w.length)return '<div class="card"><p class="mut">Nothing is waiting for your answer.</p></div>';
+    return w.map((x,i)=>`<div class="card"><div class="row2" style="justify-content:space-between"><b>${e(x.word)}</b><small class="mut">${e(x.cat)} · ${e(x.by)} · ${e(x.date)}</small></div><p class="mut" style="margin:8px 0">${e(x.text||'')}</p><textarea id="ra_${i}" rows="2" placeholder="Your example"></textarea><button class="pri" data-a="remote_answer" data-i="${i}">Save answer</button></div>`).join('');
+  }
   const w=waitingFor(S.by).filter(x=>x.u!=='prompt');
   if(!w.length)return '<div class="card"><p class="mut">Nothing is waiting for your answer.</p></div>';
   return [...new Set(w.map(x=>x.c))].map(c=>`<div class="card"><h3>${c} · waiting for your answer</h3>${table(c,w.filter(x=>x.c===c).sort((a,b)=>b.id-a.id))}</div>`).join('');
@@ -449,6 +455,36 @@ function settingsScreen(){
   const days=WEEKDAYS_S.map(d=>`<div class="daycard"><div class="row2" style="justify-content:space-between"><b>${d}</b><small class="mut">${dS[d].length} ${dS[d].length===1?'category':'categories'}</small></div><div class="pilltg-wrap">${cats.map(c=>`<button class="pilltg ${dS[d].includes(c)?'on':''}" style="--c:${COL[c]}" data-a="sday" data-d="${d}" data-c="${e(c)}">${c}</button>`).join('')}</div></div>`).join('');
   return `${bar}<div class="card"><h3>Daily target</h3><p class="mut">How many entries each category needs per day. Weekly goals update automatically.</p><div class="tgrid">${tg}</div></div><div class="card"><h3>Weekly schedule</h3><p class="mut">Tap a category to add or remove it on that day. Nothing changes until you save.</p>${days}</div><div class="card"><button class="pri ghost" data-a="resetsettings">Reset to default</button></div>`;
 }
+// ---------- backend (Google Apps Script web app) ----------
+const API='https://script.google.com/macros/s/AKfycbytB-S-YJ_R8ty6N83gkzUwBcU0y-GrRNT96oIkW0hehhk8vsnThBoncVwWEsGo7RpNdA/exec';
+const CLIENT_ID='356720291040-f136kpq5a2p7uq60lo7ev2alcmm5q51o.apps.googleusercontent.com';
+let ID_TOKEN=null, REMOTE=null;
+function loadState(){
+  return fetch(API+'?action=state&token='+encodeURIComponent(ID_TOKEN)).then(r=>r.json()).then(d=>{
+    if(d.error){S.msg=d.error;return false}
+    REMOTE=d;
+    S.notes=d.notices.map(n=>({text:n.text,to:'both',d:n.at}));
+    return true;
+  }).catch(()=>{S.msg='Could not reach the server. Check your connection.';return false});
+}
+function api(body){
+  return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({token:ID_TOKEN},body))}).then(r=>r.json());
+}
+function initGsi(){
+  if(!window.google||!google.accounts){setTimeout(initGsi,300);return}
+  const el=document.getElementById('gbtn');if(!el)return;
+  google.accounts.id.initialize({client_id:CLIENT_ID,callback:onCred});
+  google.accounts.id.renderButton(el,{theme:'outline',size:'large',text:'signin_with'});
+}
+function onCred(resp){
+  ID_TOKEN=resp.credential;
+  loadState().then(ok=>{
+    if(!ok){S.signing=true;render();return}
+    const who=REMOTE.user.toLowerCase();
+    if(S.wantMode&&S.wantMode!=='combined'&&S.wantMode!==who){S.msg='This is '+REMOTE.user+"'s account. Choose "+REMOTE.user+' to continue.';ID_TOKEN=null;S.signing=true;render();return}
+    S.signing=false;S.started=true;S.mode=who;S.by=who;S.screen='home';S.msg='';render();
+  });
+}
 const REVIEW_CATS=['Idiom','Vocabulary','Phrasal Verb','Slang'];
 function reviewPool(){return ENTRIES.filter(x=>REVIEW_CATS.includes(x.c)&&x.v[CATS[x.c].gsrc])}
 function startReview(ids){
@@ -484,6 +520,13 @@ function dupMsg(x){return `"${x.v[dupKey(x.c)]}" is already in the ${x.c} log, a
 function pickBank(v){const hit=BANK.find(b=>b.w===v);S.f[CATS[S.cat].gsrc]=v;if(hit){S.f.meaning=hit.m;S.f.cat=hit.pos||'';}S.msg='';}
 function doSubmit(){
   const C=CATS[S.cat],by=S.by;
+  if(REMOTE){
+    const values={};
+    C.f.forEach(([k,,kind])=>{if(kind!=='auto'&&S.f[k]!==undefined)values[k]=String(S.f[k]).trim()});
+    const payload=S.cat==='Analyze Data'?{action:'analysis',text:values[ownKey(S.cat,by)]||''}:{action:'submit',cat:S.cat,values:values,lateDay:S.lateDay};
+    api(payload).then(r=>{if(r.error){S.msg=r.error}else{S.msg=S.cat==='Analyze Data'?'Analysis saved.':'Saved. Your partner can now answer.';S.f={};S.lateDay=null}return loadState()}).then(render);
+    return;
+  }
     if(S.cat==='Analyze Data'){const p=promptRow(),k=ownKey(S.cat,by),txt=String(S.f[k]||'').trim();if(!p.v.pic){S.msg='Upload today picture first';return}if(!txt){S.msg='Write your analysis first';return}p.v[k]=txt;note(NAME[by]+' saved today\'s analysis',by==='bella'?'qaulan':'bella');S.f={};S.msg='Analysis saved  Your partner can read it in the log.';return}
   const ins=C.f.filter(x=>x[2]==='in').map(x=>x[0]);
   if(ins.some(k=>!String(S.f[k]||'').trim())){S.msg='Fill every field first';return}
@@ -514,6 +557,7 @@ const visNotes=()=>S.notes.filter(n=>S.mode==='combined'||n.to===S.mode||n.to===
 const LOGO_BIG='<svg viewBox="0 0 40 40" width="72" height="72" aria-hidden="true"><rect width="40" height="40" rx="12" style="fill:var(--a)"/><path d="M8 11h24a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-9l-5 4v-4H8a3 3 0 0 1-3-3V14a3 3 0 0 1 3-3z" style="fill:#fff"/><text x="20" y="24.5" text-anchor="middle" font-family="Poppins,system-ui,sans-serif" font-weight="800" font-size="9.5" letter-spacing="0.3" style="fill:var(--a)">QnB</text></svg>';
 const MODE_CARDS=[['bella','Bella','Your own learning space','#f7b8d2'],['qaulan','Qaulan','Your own learning space','#a7cdf0'],['combined','Combined','Study together and see both of you','#F8F4EC']];
 function welcomeScreen(){
+  if(S.signing)return `<div class="welcome"><div class="wlogo">${LOGO_BIG}</div><h1>Sign in with Google</h1><p class="mut">Only Bella and Qaulan can enter.</p><div id="gbtn" style="margin-top:18px"></div>${S.msg?`<div class="warn" style="margin-top:14px">${e(S.msg)}</div>`:''}<button class="ghostbtn" data-a="backwelcome" style="margin-top:14px">Back</button></div>`;
   return `<div class="welcome"><div class="wlogo">${LOGO_BIG}</div><h1>Welcome to English with QnB</h1><p class="mut">Learn and grow every day!</p><h3>What mode will you choose?</h3><div class="modes">${MODE_CARDS.map(([v,n,d,c])=>`<button class="mode-card" style="background:${c};border:1px solid #E7DFD2" data-a="choose" data-v="${v}"><b>${n}</b><span>${d}</span></button>`).join('')}</div></div>`;
 }
 function acctChip(){
@@ -523,7 +567,7 @@ function acctChip(){
 function render(){
   document.body.dataset.mode=S.started?S.mode:'combined';
   document.body.classList.toggle('welcome',!S.started);
-  if(!S.started){$('#app').innerHTML=welcomeScreen();$('#date').textContent='';return;}
+  if(!S.started){$('#app').innerHTML=welcomeScreen();$('#date').textContent='';if(S.signing)initGsi();return;}
   $('#acct').innerHTML=acctChip();
   $('#tabs').innerHTML=[['home','Home','home'],['input','Input','input'],['review','Review','review'],['dash','Dashboard','dash'],['log','Log','log'],['settings','Settings','settings']].map(([v,l,ic])=>`<button class="${S.screen===v?'on':''}" data-a="screen" data-v="${v}">${svgIcon(ic)}<span>${l}</span></button>`).join('');
   const unread=Math.max(0,visNotes().length-S.seen);const bd=$('#badge');bd.textContent=unread>99?'99+':unread;bd.style.display=unread?'block':'none';
@@ -556,8 +600,10 @@ document.addEventListener('click',ev=>{
   else if(a==='rv_missed'){startReview(S.rv.no.slice());}
   else if(a==='sday'){ensureDraft();const d=t.dataset.d,c=t.dataset.c;const on=S.dS[d].includes(c);S.dS[d]=CAT_ORDER.filter(x=>x===c?!on:S.dS[d].includes(x));}
   else if(a==='resetsettings'){ensureDraft();S.dS=JSON.parse(JSON.stringify(DEF_SCHED));S.dT=JSON.parse(JSON.stringify(DEF_TGT));S.msg='Defaults loaded. Save changes to apply them.';}
-  else if(a==='choose'){S.mode=v;S.by=v==='combined'?'bella':v;S.started=true;S.screen='home';S.msg='';}
-  else if(a==='switch'){S.started=false;}
+  else if(a==='choose'){S.wantMode=v;S.signing=true;S.msg='';}
+  else if(a==='backwelcome'){S.signing=false;S.msg='';}
+  else if(a==='remote_answer'){const w=REMOTE.waiting[+t.dataset.i];const el=document.getElementById('ra_'+t.dataset.i);const txt=el?el.value.trim():'';if(!txt){S.msg='Write your answer first.';}else{api({action:'answer',cat:w.cat,row:w.row,text:txt}).then(r=>{S.msg=r.error||'Answer saved.';return loadState()}).then(render);}}
+  else if(a==='switch'){S.started=false;S.signing=false;ID_TOKEN=null;REMOTE=null;}
   else if(a==='fulltbl'){S.fullTbl=!S.fullTbl;}
   else if(a==='late'){S.cat=t.dataset.c;S.lateDay=t.dataset.d;S.f={};S.gen=null;S.msg='';S.screen='input';S.inTab='today';}
   else if(a==='intab'){S.inTab=v;S.msg='';}
