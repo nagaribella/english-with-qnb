@@ -138,7 +138,8 @@ button[disabled]{opacity:.4;cursor:not-allowed}
   .tabs button.on{background:var(--soft);color:var(--ink);font-weight:700}
   [data-mode=qaulan] .tabs button.on{color:#0b2540}
   .tabs button:hover{background:transparent}
-  .tabs button span{white-space:nowrap}
+  .tabs button span{white-space:nowrap;font-size:10.5px}
+  .tabs button{padding:6px 6px}
 }
 .welcome{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px 18px}
 .welcome h1{font-size:26px;margin:18px 0 6px;max-width:520px}
@@ -448,6 +449,28 @@ function settingsScreen(){
   const days=WEEKDAYS_S.map(d=>`<div class="daycard"><div class="row2" style="justify-content:space-between"><b>${d}</b><small class="mut">${dS[d].length} ${dS[d].length===1?'category':'categories'}</small></div><div class="pilltg-wrap">${cats.map(c=>`<button class="pilltg ${dS[d].includes(c)?'on':''}" style="--c:${COL[c]}" data-a="sday" data-d="${d}" data-c="${e(c)}">${c}</button>`).join('')}</div></div>`).join('');
   return `${bar}<div class="card"><h3>Daily target</h3><p class="mut">How many entries each category needs per day. Weekly goals update automatically.</p><div class="tgrid">${tg}</div></div><div class="card"><h3>Weekly schedule</h3><p class="mut">Tap a category to add or remove it on that day. Nothing changes until you save.</p>${days}</div><div class="card"><button class="pri ghost" data-a="resetsettings">Reset to default</button></div>`;
 }
+const REVIEW_CATS=['Idiom','Vocabulary','Phrasal Verb','Slang'];
+function reviewPool(){return ENTRIES.filter(x=>REVIEW_CATS.includes(x.c)&&x.v[CATS[x.c].gsrc])}
+function startReview(ids){
+  let ch=ids||reviewPool().map(x=>x.id);
+  if(!ids){for(let i=ch.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[ch[i],ch[j]]=[ch[j],ch[i]]}ch=ch.slice(0,20)}
+  S.rv={cards:ch,i:0,reveal:false,ok:[],no:[]};
+}
+function reviewScreen(){
+  if(!S.rv)startReview();
+  const rv=S.rv,total=rv.cards.length;
+  if(!total)return '<div class="card"><h3>Review</h3><p class="mut">Nothing to review yet. Words you log in Idiom, Vocabulary, Phrasal Verb and Slang will appear here.</p></div>';
+  if(rv.i>=total){
+    const miss=rv.no.map(id=>ENTRIES.find(x=>x.id===id)).filter(Boolean);
+    return `<div class="card"><h3>Review done</h3><p class="mut">Remembered ${rv.ok.length} of ${total}. Need practice: ${rv.no.length}.</p><div class="row2"><button class="pri" data-a="rv_new">Review 20 new</button>${rv.no.length?'<button class="pri ghost" data-a="rv_missed">Practise missed words</button>':''}</div></div>${miss.length?`<div class="card"><h3>To practise</h3>${miss.map(x=>`<div class="item"><span><b>${e(x.v[CATS[x.c].gsrc])}</b> <small class="mut">${x.c}</small></span><small>${e(x.v.meaning||'')}</small></div>`).join('')}</div>`:''}`;
+  }
+  const en=ENTRIES.find(x=>x.id===rv.cards[rv.i]);
+  const C=CATS[en.c],word=en.v[C.gsrc],ex=en.v.qEx||en.v.bEx||'';
+  const pct=Math.round(rv.i/total*100);
+  const actions=rv.reveal?`<div class="row2" style="margin-top:14px"><button class="pri" data-a="rv_ok">Remembered</button><button class="pri ghost" data-a="rv_no">Need practice</button></div>`:`<button class="pri" data-a="rv_reveal" style="margin-top:14px">Show meaning</button>`;
+  const back=rv.reveal?`<div class="fixbox" style="margin-top:12px"><p><b>Meaning:</b> ${e(en.v.meaning||'')}</p>${ex?`<p class="mut">${e(ex)}</p>`:''}</div>`:'';
+  return `<div class="card"><div class="row2" style="justify-content:space-between"><b>Card ${rv.i+1} of ${total}</b><span class="pill" style="background:${COL[en.c]||'var(--soft)'}">${en.c}</span></div><div class="bar" style="margin:12px 0"><i style="width:${pct}%"></i></div><div style="text-align:center;padding:26px 6px"><div class="mut">Recall this</div><div style="font-size:28px;font-weight:800;margin-top:8px">${e(word)}</div>${back}</div>${actions}</div><div class="card row2" style="justify-content:space-between"><small class="mut">Remembered ${rv.ok.length} · Need practice ${rv.no.length}</small><button class="ghostbtn" data-a="rv_new">New 20</button></div>`;
+}
 function notesScreen(){
   const list=visNotes();
   return `<div class="card"><h3>Notifications · ${MODE_LABEL[S.mode]}</h3>${list.map(n=>`<div class="item"><span>${e(n.text)}</span><small class="mut">${fmtDate(n.d)}</small></div>`).join('')||'<p class="mut">No notifications yet.</p>'}</div>`;
@@ -482,6 +505,7 @@ const ICON={
   home:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>',
   input:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',
   dash:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  review:'<rect x="6" y="3" width="14" height="12" rx="2"/><path d="M4 7v10a2 2 0 0 0 2 2h10"/><path d="M10 8l3 2-3 2z"/>',
   settings:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
   log:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>'
 };
@@ -501,10 +525,10 @@ function render(){
   document.body.classList.toggle('welcome',!S.started);
   if(!S.started){$('#app').innerHTML=welcomeScreen();$('#date').textContent='';return;}
   $('#acct').innerHTML=acctChip();
-  $('#tabs').innerHTML=[['home','Home','home'],['input','Input','input'],['dash','Dashboard','dash'],['log','Log','log'],['settings','Settings','settings']].map(([v,l,ic])=>`<button class="${S.screen===v?'on':''}" data-a="screen" data-v="${v}">${svgIcon(ic)}<span>${l}</span></button>`).join('');
+  $('#tabs').innerHTML=[['home','Home','home'],['input','Input','input'],['review','Review','review'],['dash','Dashboard','dash'],['log','Log','log'],['settings','Settings','settings']].map(([v,l,ic])=>`<button class="${S.screen===v?'on':''}" data-a="screen" data-v="${v}">${svgIcon(ic)}<span>${l}</span></button>`).join('');
   const unread=Math.max(0,visNotes().length-S.seen);const bd=$('#badge');bd.textContent=unread>99?'99+':unread;bd.style.display=unread?'block':'none';
   $('#bell').classList.toggle('on',S.screen==='notes');
-  $('#app').innerHTML={home,input,dash,log,notes:notesScreen,settings:settingsScreen}[S.screen]();
+  $('#app').innerHTML={home,input,review:reviewScreen,dash,log,notes:notesScreen,settings:settingsScreen}[S.screen]();
   $('#modal').innerHTML=S.askNav?askHtml():'';
   $('#date').textContent=TODAY.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
 }
@@ -526,6 +550,10 @@ document.addEventListener('click',ev=>{
   else if(a==='dash'){S.dash=v;}
   else if(a==='dv'){S.dv=v;}
   else if(a==='dview'){S.dview=v;}
+  else if(a==='rv_reveal'){S.rv.reveal=true;}
+  else if(a==='rv_ok'||a==='rv_no'){const id=S.rv.cards[S.rv.i];(a==='rv_ok'?S.rv.ok:S.rv.no).push(id);S.rv.i++;S.rv.reveal=false;}
+  else if(a==='rv_new'){startReview();}
+  else if(a==='rv_missed'){startReview(S.rv.no.slice());}
   else if(a==='sday'){ensureDraft();const d=t.dataset.d,c=t.dataset.c;const on=S.dS[d].includes(c);S.dS[d]=CAT_ORDER.filter(x=>x===c?!on:S.dS[d].includes(x));}
   else if(a==='resetsettings'){ensureDraft();S.dS=JSON.parse(JSON.stringify(DEF_SCHED));S.dT=JSON.parse(JSON.stringify(DEF_TGT));S.msg='Defaults loaded. Save changes to apply them.';}
   else if(a==='choose'){S.mode=v;S.by=v==='combined'?'bella':v;S.started=true;S.screen='home';S.msg='';}
