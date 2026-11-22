@@ -251,7 +251,7 @@ const inRange=(d,r)=>r==='day'?d===TODAYS:r==='week'?(d>=MON&&d<=TODAYS):true;
 const subsN=(u,c,r)=>c==='Analyze Data'?ENTRIES.filter(x=>x.c===c&&inRange(x.sd||x.d,r)&&String(x.v[ownKey(c,u)]||'').trim()).length:ENTRIES.filter(x=>x.u===u&&x.c===c&&inRange(x.sd||x.d,r)).length;
 // answers by u = rows by the partner where u's example/answer cell is filled
 const ansN=(u,c,r)=>{const k=ownKey(c,u);return k&&c!=='Analyze Data'?ENTRIES.filter(x=>x.u!==u&&x.c===c&&inRange(x.sd||x.d,r)&&String(x.v[k]||'').trim()).length:0};
-const waitingFor=u=>ENTRIES.filter(x=>{const k=ownKey(x.c,u);return k&&x.u!==u&&!String(x.v[k]||'').trim()});
+const waitingFor=u=>ENTRIES.filter(x=>{const k=ownKey(x.c,u);return k&&x.u!==u&&(x.d||'')>=MON&&!String(x.v[k]||'').trim()});
 const users=()=>S.mode==='combined'?U:[S.mode];
 const todayList=()=>SCHED[S.day||TODAYNAME]||[];
 const pct=(a,b)=>b?Math.min(100,Math.round(a/b*100)):0;
@@ -510,6 +510,7 @@ let ID_TOKEN=null, REMOTE=null;
 function loadState(){
   return fetch(API+'?action=state&token='+encodeURIComponent(ID_TOKEN)).then(r=>r.json()).then(d=>{
     if(d.error){S.msg=d.error;return false}
+    d.waiting=(d.waiting||[]).filter(x=>x.date>=MON);
     REMOTE=d;
     S.notes=d.notices.map(n=>({text:n.text,to:'both',d:n.at}));
     if(d.words&&d.words.length){BANK.length=0;d.words.forEach(w=>BANK.push(w));}
