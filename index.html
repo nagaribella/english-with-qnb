@@ -570,9 +570,15 @@ function reviewScreen(){
   const back=rv.reveal?`<div class="fixbox" style="margin-top:12px"><p><b>Meaning:</b> ${e(en.v.meaning||'')}</p>${ex?`<p class="mut">${e(ex)}</p>`:''}</div>`:'';
   return `<div class="card"><div class="row2" style="justify-content:space-between"><b>Card ${rv.i+1} of ${total}</b><span class="pill" style="background:${COL[en.c]||'var(--soft)'}">${en.c}</span></div><div class="bar" style="margin:12px 0"><i style="width:${pct}%"></i></div><div style="text-align:center;padding:26px 6px"><div class="mut">Recall this</div><div style="font-size:28px;font-weight:800;margin-top:8px">${e(word)}</div>${back}</div>${actions}</div><div class="card row2" style="justify-content:space-between"><small class="mut">Remembered ${rv.ok.length} · Need practice ${rv.no.length}</small><button class="ghostbtn" data-a="rv_new">New 20</button></div>`;
 }
+function noteKey(n){return String(n.d)+'|'+String(n.text)}
+function readSet(){try{return new Set(JSON.parse(localStorage.getItem('qnb_read')||'[]'))}catch(err){return new Set()}}
+function unreadNotes(){const r=readSet();return visNotes().filter(n=>!r.has(noteKey(n)))}
+function markAllRead(){const r=readSet();visNotes().forEach(n=>r.add(noteKey(n)));localStorage.setItem('qnb_read',JSON.stringify([...r].slice(-400)))}
 function notesScreen(){
-  const list=visNotes();
-  return `<div class="card"><h3>Notifications · ${MODE_LABEL[S.mode]}</h3>${list.map(n=>`<div class="item"><span>${e(n.text)}</span><small class="mut">${fmtDate(n.d)}</small></div>`).join('')||'<p class="mut">No notifications yet.</p>'}</div>`;
+  const list=visNotes(),r=readSet();
+  const unread=list.filter(n=>!r.has(noteKey(n))).length;
+  const items=list.map(n=>{const isNew=!r.has(noteKey(n));return `<div class="item" style="${isNew?'font-weight:700':''}"><span>${isNew?'<i class="tdot" style="--c:var(--a)"></i>':''}${e(n.text)}</span><small class="mut">${fmtDate(n.d)}</small></div>`}).join('');
+  return `<div class="card"><div class="row2" style="justify-content:space-between"><h3 style="margin:0">Notifications · ${MODE_LABEL[S.mode]}</h3>${unread?`<button class="ghostbtn" data-a="markread">Mark all read</button>`:''}</div><p class="mut" style="margin:6px 0 0">${unread?unread+' unread':'All caught up'}</p>${items||'<p class="mut">No notifications yet.</p>'}</div>`;
 }
 
 // ---- Form logic ----
@@ -638,7 +644,7 @@ function render(){
   if(!S.started){$('#app').innerHTML=welcomeScreen();$('#date').textContent='';if(S.signing)initGsi();return;}
   $('#acct').innerHTML=acctChip();
   $('#tabs').innerHTML=[['home','Home','home'],['input','Input','input'],['review','Review','review'],['dash','Dashboard','dash'],['log','Log','log'],['settings','Settings','settings']].map(([v,l,ic])=>`<button class="${S.screen===v?'on':''}" data-a="screen" data-v="${v}">${svgIcon(ic)}<span>${l}</span></button>`).join('');
-  const unread=Math.max(0,visNotes().length-S.seen);const bd=$('#badge');bd.textContent=unread>99?'99+':unread;bd.style.display=unread?'block':'none';
+  const unread=unreadNotes().length;const bd=$('#badge');bd.textContent=unread>99?'99+':unread;bd.style.display=unread?'block':'none';
   $('#bell').classList.toggle('on',S.screen==='notes');
   $('#app').innerHTML={home,input,review:reviewScreen,dash,log,notes:notesScreen,settings:settingsScreen}[S.screen]();
   $('#modal').innerHTML=S.askNav?askHtml():'';
@@ -664,6 +670,7 @@ document.addEventListener('click',ev=>{
   else if(a==='dash'){S.dash=v;}
   else if(a==='dv'){S.dv=v;}
   else if(a==='dview'){S.dview=v;}
+  else if(a==='markread'){markAllRead();S.msg='All notifications marked as read.';}
   else if(a==='rv_reveal'){S.rv.reveal=true;}
   else if(a==='rv_ok'||a==='rv_no'){const id=S.rv.cards[S.rv.i];(a==='rv_ok'?S.rv.ok:S.rv.no).push(id);S.rv.i++;S.rv.reveal=false;}
   else if(a==='rv_new'){startReview();}
