@@ -553,6 +553,31 @@ function initGsi(){
   google.accounts.id.initialize({client_id:CLIENT_ID,callback:onCred});
   google.accounts.id.renderButton(el,{theme:'outline',size:'large',text:'signin_with'});
 }
+const APP_URL='https://nagaribella.github.io/english-with-qnb/';
+function jwtPayload(t){try{return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')))}catch(err){return {}}}
+function startGoogleLogin(){
+  const nonce=Math.random().toString(36).slice(2)+Date.now().toString(36);
+  sessionStorage.setItem('qnb_nonce',nonce);
+  sessionStorage.setItem('qnb_want',S.wantMode||'');
+  const url='https://accounts.google.com/o/oauth2/v2/auth?client_id='+encodeURIComponent(CLIENT_ID)
+    +'&redirect_uri='+encodeURIComponent(APP_URL)+'&response_type=id_token&scope=openid%20email'
+    +'&nonce='+encodeURIComponent(nonce)+'&prompt=select_account';
+  window.location.href=url;
+}
+function handleRedirect(){
+  if(!location.hash)return false;
+  const p=new URLSearchParams(location.hash.slice(1));
+  history.replaceState(null,'',location.pathname+location.search);
+  if(p.get('error')){S.signing=true;S.msg='Google sign-in was cancelled. Please try again.';S.started=false;return false}
+  const tok=p.get('id_token');
+  if(!tok)return false;
+  const want=sessionStorage.getItem('qnb_nonce');
+  if(want&&jwtPayload(tok).nonce!==want){S.signing=true;S.msg='Sign-in could not be confirmed. Please try again.';return false}
+  S.wantMode=sessionStorage.getItem('qnb_want')||S.wantMode;
+  S.signing=true;S.started=false;
+  onCred({credential:tok});
+  return true;
+}
 function jwtExp(t){try{return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).exp*1000}catch(err){return 0}}
 function saveSession(){if(!ID_TOKEN||!REMOTE)return;localStorage.setItem('qnb_session',JSON.stringify({token:ID_TOKEN,exp:jwtExp(ID_TOKEN),mode:S.mode,by:S.by,screen:S.screen}))}
 function restoreSession(){
@@ -774,7 +799,7 @@ const visNotes=()=>S.notes.filter(n=>S.mode==='combined'||n.to===S.mode||n.to===
 const LOGO_BIG='<svg viewBox="0 0 40 40" width="72" height="72" aria-hidden="true"><rect width="40" height="40" rx="12" style="fill:#B9A58F"/><path d="M8 11h24a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-9l-5 4v-4H8a3 3 0 0 1-3-3V14a3 3 0 0 1 3-3z" style="fill:#fff"/><text x="20" y="24.5" text-anchor="middle" font-family="Poppins,system-ui,sans-serif" font-weight="800" font-size="9.5" letter-spacing="0.3" style="fill:#B9A58F">QnB</text></svg>';
 const MODE_CARDS=[['bella','Bella','Your own learning space','#f7b8d2'],['qaulan','Qaulan','Your own learning space','#a7cdf0'],['combined','Combined','Study together and see both of you','#F8F4EC']];
 function welcomeScreen(){
-  if(S.signing)return `<div class="welcome"><div class="wlogo">${LOGO_BIG}</div><h1>Sign in with Google</h1><p class="mut">Only Bella and Qaulan can enter.</p><div id="gbtn" style="margin-top:18px"></div>${S.msg?`<div class="warn" style="margin-top:14px">${e(S.msg)}</div>`:''}<button class="ghostbtn" data-a="backwelcome" style="margin-top:14px">Back</button></div>`;
+  if(S.signing)return `<div class="welcome"><div class="wlogo">${LOGO_BIG}</div><h1>Sign in with Google</h1><p class="mut">Only Bella and Qaulan can enter.</p><button class="pri" data-a="googlesignin" style="margin-top:18px;width:100%;max-width:320px">Sign in with Google</button>${S.msg?`<div class="warn" style="margin-top:14px">${e(S.msg)}</div>`:''}<button class="ghostbtn" data-a="backwelcome" style="margin-top:14px">Back</button></div>`;
   return `<div class="welcome"><div class="wlogo">${LOGO_BIG}</div><h1>Welcome to English with QnB</h1><p class="mut">Learn and grow every day!</p><h3>What mode will you choose?</h3><div class="modes">${MODE_CARDS.map(([v,n,d,c])=>`<button class="mode-card" style="background:${c};border:1px solid #E7DFD2" data-a="choose" data-v="${v}"><b>${n}</b><span>${d}</span></button>`).join('')}</div></div>`;
 }
 function acctChip(){
@@ -837,6 +862,7 @@ document.addEventListener('click',ev=>{
   else if(a==='resetsettings'){ensureDraft();S.dS=JSON.parse(JSON.stringify(DEF_SCHED));S.dT=JSON.parse(JSON.stringify(DEF_TGT));S.msg='Defaults loaded. Save changes to apply them.';}
   else if(a==='choose'){S.wantMode=v;S.signing=true;S.msg='';}
   else if(a==='backwelcome'){S.signing=false;S.msg='';}
+  else if(a==='googlesignin'){startGoogleLogin();return;}
   else if(a==='remote_answer'){const w=REMOTE.waiting[+t.dataset.i];const el=document.getElementById('ra_'+t.dataset.i);const txt=el?el.value.trim():'';if(!txt){S.msg='Write your answer first.';}else{api({action:'answer',cat:w.cat,row:w.row,text:txt}).then(r=>{S.msg=r.error||'Answer saved.';return loadState()}).then(render);}}
   else if(a==='switch'){S.started=false;S.signing=false;ID_TOKEN=null;REMOTE=null;localStorage.removeItem('qnb_session');}
   else if(a==='fulltbl'){S.fullTbl=!S.fullTbl;}
@@ -866,7 +892,7 @@ document.addEventListener('change',ev=>{
     promptRow().v.pic={src:rd.result,name:f.name};S.msg='Picture uploaded. Both of you see the same one.';render();};rd.readAsDataURL(f);}}
 });
 document.addEventListener('keydown',ev=>{if(ev.target.id==='bq'&&ev.key==='Enter'){S.bq=ev.target.value;render();}});
-restoreSession();
+if(!handleRedirect())restoreSession();
 let lastY=0;
 window.addEventListener('scroll',()=>{const y=window.scrollY,tb=document.getElementById('tabs');if(!tb)return;if(y>lastY+10)tb.classList.add('hide');else if(y<lastY-10)tb.classList.remove('hide');lastY=y},{passive:true});
 render();
