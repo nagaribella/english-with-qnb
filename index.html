@@ -419,7 +419,7 @@ function answerList(){
   if(REMOTE){
     const w=REMOTE.waiting;
     if(!w.length)return '<div class="card"><p class="mut">Nothing is waiting for your answer.</p></div>';
-    return w.map((x,i)=>`<div class="card"><div class="row2" style="justify-content:space-between"><b>${e(x.word)}</b><small class="mut">${e(x.cat)} · ${e(x.by)} · ${e(x.date)}</small></div><p class="mut" style="margin:8px 0">${e(x.text||'')}</p><textarea id="ra_${i}" rows="2" placeholder="Your example"></textarea><button class="pri" data-a="remote_answer" data-i="${i}">Save answer</button></div>`).join('');
+    return w.map((x,i)=>`<div class="card"><div class="row2" style="justify-content:space-between"><b>${e(x.word)}</b><small class="mut">${e(x.cat)} · ${e(x.by)} · ${e(x.date)}</small></div><p class="mut" style="margin:8px 0">${e(x.text||'')}</p>${(()=>{const el='ra_'+CAT_ORDER.indexOf(x.cat)+'_'+x.row;return `<textarea id="${el}" data-dr="${el}" class="rvs" rows="2" placeholder="Your example">${e((S.dr||{})[el]||'')}</textarea>${aiBox('dr:'+el)}<button class="pri" data-a="remote_answer" data-i="${i}" data-el="${el}">Save answer</button>`})()}</div>`).join('');
   }
   const w=waitingFor(S.by).filter(x=>x.u!=='prompt');
   if(!w.length)return '<div class="card"><p class="mut">Nothing is waiting for your answer.</p></div>';
@@ -524,10 +524,10 @@ function cellHtml(x,k){
     // Your own answer on your partner's entry (or your own analysis) can be edited
     const canEditAns=REMOTE&&owner===S.by&&x.row&&(x.c==='Analyze Data'||(x.u!==S.by&&x.u!=='prompt'));
     if(String(val||'').trim()){
-      if(canEditAns&&S.editAns===x.id+'|'+k)return `<div class="exrow"><input id="ea${x.id}" value="${e(val)}" style="min-width:160px"><button data-a="saveAns" data-id="${x.id}" data-k="${k}">Save</button></div><button class="ghostbtn" data-a="cancelAns">Cancel</button>`;
+      if(canEditAns&&S.editAns===x.id+'|'+k)return `<div class="exrow"><input id="ea${x.id}" data-dr="ea${x.id}" value="${e((S.dr||{})['ea'+x.id]??val)}" style="min-width:160px"><button data-a="saveAns" data-id="${x.id}" data-k="${k}">Save</button></div><button class="ghostbtn" data-a="cancelAns">Cancel</button>${aiBox('dr:ea'+x.id)}`;
       return hl(val,['Idiom','Slang','Phrasal Verb','Vocabulary','Expression'].includes(x.c)?x.v.word:'')+(canEditAns?`<div><button class="ghostbtn" data-a="editAns" data-id="${x.id}" data-k="${k}">Edit</button></div>`:'');
     }
-    if(owner===S.by&&x.u!==S.by&&x.u!=='prompt')return `<div class="exrow"><input id="a${x.id}" placeholder="Your answer"><button data-a="ans" data-id="${x.id}" data-k="${k}">Save</button></div>`;
+    if(owner===S.by&&x.u!==S.by&&x.u!=='prompt')return `<div class="exrow"><input id="a${x.id}" data-dr="a${x.id}" value="${e((S.dr||{})['a'+x.id]||'')}" placeholder="Your answer"><button data-a="ans" data-id="${x.id}" data-k="${k}">Save</button></div>${aiBox('dr:a'+x.id)}`;
     return `<span class="wait">waiting for ${NAME[owner]}</span>`;
   }
   return e(val??'—');
@@ -1030,6 +1030,14 @@ function aiBox(where){
 function runAiCheck(where){
   let text='',word='',cat='';
   if(where==='use'){const c=S.rv&&rvCard(S.rv.cards[S.rv.i]);text=S.rv&&S.rv.checked?S.rv.checked.typed:'';word=c?c.word:'';cat=c?c.cat:'';}
+  else if(where.indexOf('dr:')===0){
+    const el=where.slice(3),box=document.getElementById(el);
+    text=box?box.value:((S.dr||{})[el]||'');S.dr=S.dr||{};S.dr[el]=text;
+    let en=null;
+    const m=el.match(/^ra_(\d+)_(\d+)$/);
+    if(m){const w=(REMOTE&&REMOTE.waiting||[]).find(x=>CAT_ORDER.indexOf(x.cat)===+m[1]&&x.row===+m[2]);if(w){word=w.word;cat=w.cat;}}
+    else{en=ENTRIES.find(x=>x.id===Number(el.replace(/^e?a/,'')));if(en){word=en.v.word||en.v.title||'';cat=en.c;}}
+  }
   else{text=S.f[aiFormKey()]||'';word=S.f.word||S.f.title||'';cat=S.cat;}
   text=String(text).trim();
   if(!text){S.msg='Write your sentence first.';render();return}
@@ -1265,7 +1273,8 @@ document.addEventListener('click',ev=>{
     if(REMOTE){S.msg='Deleting…';render();api({action:'deleteMistake',row:id}).then(r=>{S.msg=r.error||'Mistake deleted.';render()});return;}
     const i=MISTAKES.findIndex(m=>m.row===id);if(i>=0)MISTAKES.splice(i,1);}
   else if(a==='aiCheck'){runAiCheck(t.dataset.w);return}
-  else if(a==='aiUse'){if(S.ai&&S.ai.res){S.f[aiFormKey()]=S.ai.res.better;S.ai=null;S.msg='Updated. Read it once more, then submit.';}}
+  else if(a==='aiUse'){if(S.ai&&S.ai.res&&S.ai.where.indexOf('dr:')===0){S.dr=S.dr||{};S.dr[S.ai.where.slice(3)]=S.ai.res.better;S.ai=null;S.msg='Updated. Read it once more, then save.';}
+  else if(S.ai&&S.ai.res){S.f[aiFormKey()]=S.ai.res.better;S.ai=null;S.msg='Updated. Read it once more, then submit.';}}
   else if(a==='prtab'){S.prTab=v;S.msg='';}
   else if(a==='goreview'){S.screen='review';S.prTab='review';}
   else if(a==='goduel'){S.screen='review';S.prTab='duel';}
@@ -1287,7 +1296,7 @@ document.addEventListener('click',ev=>{
   else if(a==='choose'){S.wantMode=v;S.signing=true;S.msg='';}
   else if(a==='backwelcome'){S.signing=false;S.msg='';}
   else if(a==='googlesignin'){startGoogleLogin();return;}
-  else if(a==='remote_answer'){const w=REMOTE.waiting[+t.dataset.i];const el=document.getElementById('ra_'+t.dataset.i);const txt=el?el.value.trim():'';if(!txt){S.msg='Write your answer first.';}else{S.msg='Saving…';api({action:'answer',cat:w.cat,row:w.row,text:txt}).then(r=>{S.msg=r.error||'Answer saved.';render()});}}
+  else if(a==='remote_answer'){const w=REMOTE.waiting[+t.dataset.i];const elId=t.dataset.el;const el=document.getElementById(elId);const txt=el?el.value.trim():'';if(!txt){S.msg='Write your answer first.';}else{S.msg='Saving…';api({action:'answer',cat:w.cat,row:w.row,text:txt}).then(r=>{if(!r.error){delete (S.dr||{})[elId];if(S.ai&&S.ai.where==='dr:'+elId)S.ai=null;}S.msg=r.error||'Answer saved.';render()});}}
   else if(a==='switch'){S.started=false;S.signing=false;ID_TOKEN=null;REMOTE=null;localStorage.removeItem('qnb_session');}
   else if(a==='fulltbl'){S.fullTbl=!S.fullTbl;}
   else if(a==='late'){S.cat=t.dataset.c;S.lateDay=t.dataset.d;S.f={};S.gen=null;S.msg='';S.screen='input';S.inTab='today';}
@@ -1298,14 +1307,14 @@ document.addEventListener('click',ev=>{
   else if(a==='startEdit'){S.editId=id;}
   else if(a==='cancelEdit'){S.editId=null;}
   else if(a==='editAns'){S.editAns=id+'|'+t.dataset.k;S.editId=null;}
-  else if(a==='cancelAns'){S.editAns=null;}
+  else if(a==='cancelAns'){S.editAns=null;S.ai=null;S.dr={};}
   else if(a==='saveAns'){const en=ENTRIES.find(x=>x.id===id);const val=(document.getElementById('ea'+id)||{value:''}).value.trim();
     if(!en||!val){S.msg='Write your answer first.';}
-    else{S.editAns=null;S.msg='Saving…';render();api({action:'answer',cat:en.c,row:en.row,text:val,replace:'1'}).then(r=>{S.msg=r.error||'Answer updated.';render()});return;}}
+    else{S.editAns=null;S.msg='Saving…';render();api({action:'answer',cat:en.c,row:en.row,text:val,replace:'1'}).then(r=>{if(!r.error){delete (S.dr||{})['ea'+id];S.ai=null;}S.msg=r.error||'Answer updated.';render()});return;}}
   else if(a==='savEdit'){const en=ENTRIES.find(x=>x.id===id);if(en){const values={};CATS[en.c].f.forEach(([k,,kind])=>{if(kind!=='auto'&&(!/^[qb](Ex|J|A)$/.test(k)||k===ownKey(en.c,S.by))){const el=document.getElementById('ed_'+k);if(el)values[k]=el.value.trim()}});S.editId=null;S.msg='Saving…';render();api({action:'edit',cat:en.c,row:en.row,values:values}).then(r=>{S.msg=r.error||'Changes saved.';render()});return;}}
   else if(a==='delEntry'){const en=ENTRIES.find(x=>x.id===id);if(en&&confirm('Delete this entry? This cannot be undone.')){S.msg='Deleting…';render();api({action:'delete',cat:en.c,row:en.row}).then(r=>{S.msg=r.error||'Entry deleted.';render()});return;}}
   else if(a==='refresh'){S.msg='Refreshing…';loadState(true).then(ok=>{S.msg=ok?'Up to date.':S.msg;render()});return;}
-  else if(a==='ans'&&REMOTE){const en=ENTRIES.find(x=>x.id===id);const val=(document.getElementById('a'+id)||{value:''}).value.trim();if(!en||!val){S.msg='Write your answer first.';}else{S.msg='Saving…';render();api({action:'answer',cat:en.c,row:en.row,text:val}).then(r=>{S.msg=r.error||'Answer saved.';render()});return;}}
+  else if(a==='ans'&&REMOTE){const en=ENTRIES.find(x=>x.id===id);const val=(document.getElementById('a'+id)||{value:''}).value.trim();if(!en||!val){S.msg='Write your answer first.';}else{S.msg='Saving…';render();api({action:'answer',cat:en.c,row:en.row,text:val}).then(r=>{if(!r.error){delete (S.dr||{})['a'+id];S.ai=null;}S.msg=r.error||'Answer saved.';render()});return;}}
   else if(a==='ans'){const id=+t.dataset.id,k=t.dataset.k;const val=(document.getElementById('a'+id)||{value:''}).value.trim();const en=ENTRIES.find(x=>x.id===id);if(en&&val){en.v[k]=val;note(NAME[S.by]+' answered an entry in '+en.c,en.u);S.msg='Answer saved ';}}
   render();
 });
@@ -1322,6 +1331,7 @@ document.addEventListener('change',ev=>{
     if(REMOTE){S.msg='Uploading picture…';render();shrinkImage(f).then(data=>apiPost({action:'picture',name:f.name.replace(/\.[^.]+$/,'')+'.jpg',mime:'image/jpeg',data:data})).then(r=>{S.msg=r.error||'Picture uploaded. Both of you see the same one.';render()}).catch(err=>{S.msg=err.message;render()});return;}
     const rd=new FileReader();rd.onload=()=>{promptRow().v.pic={src:rd.result,name:f.name};S.msg='Picture uploaded. Both of you see the same one.';render();};rd.readAsDataURL(f);}
 });
+document.addEventListener('input',ev=>{const d=ev.target.dataset&&ev.target.dataset.dr;if(d){S.dr=S.dr||{};S.dr[d]=ev.target.value;if(S.ai&&S.ai.where==='dr:'+d&&!S.ai.loading)S.ai=null;}});
 document.addEventListener('input',ev=>{const k=ev.target.dataset&&ev.target.dataset.mf;if(k){S.mf=S.mf||{};S.mf[k]=ev.target.value}});
 document.addEventListener('keydown',ev=>{
   if(ev.target.id==='rvq'&&ev.key==='Enter'){ev.preventDefault();const b=document.querySelector('[data-a=rv_check]');if(b)b.click();return}
