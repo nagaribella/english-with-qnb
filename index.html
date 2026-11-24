@@ -186,6 +186,32 @@ body.dark{--bg:linear-gradient(160deg,#1c1822,#15121a 60%);--card:#241f2b;--ink:
 .tabs button{position:relative}
 #rvq{margin:12px 0}
 @media(max-width:760px){.tabs{transition:transform .25s ease}.tabs.hide{transform:translateY(150%)}}
+
+.rvsel{width:100%;max-width:360px;margin:4px 0 6px;padding:9px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--ink);font:600 13px Poppins,system-ui,sans-serif}
+/* ---- sidebar cleanup (desktop) ---- */
+.tabs button{position:relative}
+@media(min-width:761px){
+  .shell{grid-template-columns:264px 1fr}
+  .side{display:grid;grid-template-columns:1fr auto auto;grid-auto-rows:min-content;align-content:start;column-gap:8px;row-gap:0;padding:24px 18px}
+  .side .toprow{display:contents}
+  .side .logo{grid-row:1;grid-column:1/-1;gap:12px;margin-bottom:22px}
+  .side .logo svg{width:44px;height:44px}
+  .side .brand{font-size:17px;line-height:1.2;white-space:nowrap}
+  .side .tagline{font-size:12px;margin-top:3px}
+  .side #date{grid-row:2;grid-column:1;align-self:center;margin:0;font-size:13px}
+  .side .bell{grid-row:2;width:38px;height:38px}
+  .side [data-a=refresh]{grid-column:2}
+  .side #bell{grid-column:3}
+  .side .bell svg{width:19px;height:19px}
+  .side #acct{grid-row:3;grid-column:1/-1;margin:16px 0 18px}
+  .side .tabs{grid-row:4;grid-column:1/-1}
+  .side .acct{display:grid;grid-template-columns:auto 1fr;column-gap:12px;row-gap:10px;padding:14px}
+  .side .acct>div:nth-child(2){gap:0;line-height:1.3}
+  .side .acct small{font-size:12px}
+  .side .acct .ghostbtn{grid-column:1/-1;width:100%;margin:0;padding:7px 10px;font-size:12px;background:var(--card)}
+  .side .acct .ghostbtn:hover{border-color:var(--a)}
+  .tabs .adot{position:static;margin-left:auto;flex:none}
+}
 </style></head>
 <body data-mode="bella">
 <div class="shell">
@@ -365,7 +391,7 @@ function inputToday(){
   const C=CATS[S.cat],by=S.by;
   const todo=todayList().map(c=>{const dn=subsN(by,c,'day');return `<button class="todo ${S.cat===c?'on':''}" data-a="todo" data-v="${c}" style="--c:${COL[c]}"><span class="radio"></span><span>${c}</span><span class="tg">${dn}/${TGT[c]}</span><span class="bar" style="grid-column:1/-1"><i style="width:${pct(dn,TGT[c])}%"></i></span></button>`}).join('');
   const who=S.mode==='combined'?`<label>Submitted by</label><div class="seg">${U.map(u=>`<button class="${by===u?'on':''}" data-a="by" data-v="${u}">${NAME[u]}</button>`).join('')}</div>`:'';
-  const bankCtl=(C.bank.length&&S.src==='bank')?`<input id="bq" value="${e(S.bq||'')}" placeholder="Search Words Bank (press Enter)"><select id="bt"><option>All</option>${[...new Set(BANK.filter(b=>C.bank.includes(b.c)).map(b=>b.t))].map(t=>`<option ${S.bt===t?'selected':''}>${e(t)}</option>`).join('')}</select>`:'';
+  const bankCtl=(C.bank.length&&S.src==='bank')?`<input id="bq" value="${e(S.bq||'')}" placeholder="Search Words Bank (press Enter)"><select id="bt"><option>All</option>${[...new Set(BANK.filter(b=>C.bank.includes(b.c)).map(b=>b.t))].map(t=>`<option ${S.bt===t?'selected':''}>${e(t)}</option>`).join('')}</select></div>`:'';
   const curT=(S.src==='bank'&&S.f[C.gsrc])?(BANK.find(b=>b.w===String(S.f[C.gsrc]).toLowerCase())||{}).t:null;
   const sameTopic=curT?`<p class="mut">Same topic: ${e(curT)}</p><div class="chips">${BANK.filter(b=>b.t===curT&&C.bank.includes(b.c)&&b.w!==String(S.f[C.gsrc]).toLowerCase()).slice(0,6).map(b=>`<button data-a="pick" data-v="${e(b.w)}">${e(b.w)}</button>`).join('')}</div>`:'';
   const bq=(S.bq||'').toLowerCase();
@@ -607,7 +633,7 @@ function onCred(resp){
     S.signing=false;S.started=true;S.mode=S.wantMode==='combined'?'combined':who;S.by=who;S.screen='home';S.msg='';saveSession();render();
   });
 }
-const REVIEW_CATS=['Idiom','Vocabulary','Phrasal Verb','Slang'];
+const REVIEW_CATS=['Vocabulary','Slang','Idiom','Phrasal Verb','Expression','Grammar'];
 const SRS_INT=[1,3,7,14,30];
 const srsGet=()=>{try{return JSON.parse(localStorage.getItem('qnb_srs')||'{}')}catch(err){return {}}};
 const srsSet=o=>localStorage.setItem('qnb_srs',JSON.stringify(o));
@@ -615,20 +641,43 @@ const favGet=()=>{try{return JSON.parse(localStorage.getItem('qnb_fav')||'[]')}c
 function addDays(d,n){const x=new Date(d+'T12:00:00');x.setDate(x.getDate()+n);return ds(x)}
 function wordOf(en){return String(en.v[CATS[en.c].gsrc]||'').trim()}
 function topicOf(w){const b=BANK.find(x=>x.w===String(w).toLowerCase());return b&&b.t?b.t:'Other'}
-function reviewPool(){return ENTRIES.filter(x=>REVIEW_CATS.includes(x.c)&&wordOf(x))}
+// The word to recall for an entry (Grammar keeps its name in the "word" field)
+function rvWordOf(en){return String(en.c==='Grammar'?(en.v.word||''):wordOf(en)).trim()}
+// Turns a card key into one shape for both sources.
+// Our entries use their id (a number); Words Bank items use "b:<index>".
+function rvCard(key){
+  if(typeof key==='string'&&key.indexOf('b:')===0){
+    const b=BANK[Number(key.slice(2))];if(!b)return null;
+    return {key:key,word:b.w,cat:b.c||'Word',meaning:b.m||'',extra:b.idm?'Indonesian: '+b.idm:'',ex:b.ex||'',topic:b.t||'Other'};
+  }
+  const en=ENTRIES.find(x=>x.id===key);if(!en)return null;
+  const g=en.c==='Grammar',w=rvWordOf(en);
+  return {key:key,word:w,cat:en.c,
+    meaning:g?(en.v.rules||''):(en.v.meaning||''),
+    extra:g?(en.v.when?'When to use: '+en.v.when:''):(en.c==='Expression'&&en.v.ung?'Ungkapan: '+en.v.ung:''),
+    ex:en.v.qEx||en.v.bEx||'',topic:topicOf(w)};
+}
+function reviewPool(){
+  if(S.rvSrc==='bank')return BANK.map((b,i)=>b&&b.w&&REVIEW_CATS.includes(b.c)?rvCard('b:'+i):null).filter(Boolean);
+  return ENTRIES.filter(x=>REVIEW_CATS.includes(x.c)&&rvWordOf(x)).map(x=>rvCard(x.id)).filter(Boolean);
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function startReview(ids){
   if(ids){S.rv={cards:ids,i:0,reveal:false,ok:[],no:[],checked:null};return}
   const srs=srsGet(),fav=favGet();
   let pool=reviewPool();
-  if(S.rvTopic&&S.rvTopic!=='All')pool=pool.filter(en=>topicOf(wordOf(en))===S.rvTopic);
-  if(S.rvFav)pool=pool.filter(en=>fav.includes(wordOf(en).toLowerCase()));
-  const due=pool.filter(en=>{const r=srs[wordOf(en).toLowerCase()];return !r||r.due<=TODAYS});
-  due.sort((a,b)=>{const ra=srs[wordOf(a).toLowerCase()],rb=srs[wordOf(b).toLowerCase()];const da=ra?ra.due:'0000',db=rb?rb.due:'0000';return da<db?-1:da>db?1:0});
-  S.rv={cards:due.slice(0,20).map(en=>en.id),i:0,reveal:false,ok:[],no:[],checked:null};
+  if(S.rvCat&&S.rvCat!=='All')pool=pool.filter(c=>c.cat===S.rvCat);
+  if(S.rvSrc==='bank'&&S.rvTopic&&S.rvTopic!=='All')pool=pool.filter(c=>c.topic===S.rvTopic);
+  if(S.rvFav)pool=pool.filter(c=>fav.includes(c.word.toLowerCase()));
+  // Words seen before and due today come first, then new words. Both groups are shuffled.
+  const again=[],fresh=[];
+  pool.forEach(c=>{const r=srs[c.word.toLowerCase()];if(!r)fresh.push(c);else if(r.due<=TODAYS)again.push(c)});
+  const cards=[...shuffle(again),...shuffle(fresh)].slice(0,20);
+  S.rv={cards:cards.map(c=>c.key),i:0,reveal:false,ok:[],no:[],checked:null};
 }
-function rvRecord(id,ok){
-  const en=ENTRIES.find(x=>x.id===id);if(!en)return;
-  const w=wordOf(en).toLowerCase(),srs=srsGet();
+function rvRecord(key,ok){
+  const c=rvCard(key);if(!c)return;
+  const w=c.word.toLowerCase(),srs=srsGet();
   const r=srs[w]||{box:0,due:TODAYS};
   if(ok){r.box=Math.min(r.box+1,SRS_INT.length-1);r.due=addDays(TODAYS,SRS_INT[r.box])}else{r.box=0;r.due=addDays(TODAYS,1)}
   r.last=TODAYS;r.lastOk=ok;srs[w]=r;srsSet(srs);
@@ -640,6 +689,7 @@ function blankIt(ex,kw){
   while((m=re.exec(t))){out+=e(t.slice(last,m.index))+'<span class="blank">______</span>';last=m.index+m[0].length}
   return out+e(t.slice(last));
 }
+function hasKw(ex,kw){try{return new RegExp('(?<![A-Za-z])('+kwPattern(kw)+')(?![A-Za-z])','i').test(String(ex||''))}catch(err){return false}}
 function quizOk(typed,kw){return new RegExp('^(?:'+kwPattern(kw)+')$','i').test(String(typed).trim().replace(/\s+/g,' '))}
 function bindSwipe(){
   const el=document.getElementById('rvcard');if(!el||el._sw)return;el._sw=true;
@@ -654,35 +704,45 @@ function bindSwipe(){
 function reviewScreen(){
   if(!S.rv)startReview();
   const fav=favGet(),pool=reviewPool();
-  const topics=['All',...new Set(pool.map(en=>topicOf(wordOf(en))))];
-  const head=`<div class="card"><div class="chips">${topics.map(t=>`<button class="${(S.rvTopic||'All')===t?'on':''}" data-a="rv_topic" data-v="${e(t)}">${e(t)}</button>`).join('')}<button class="${S.rvFav?'on':''}" data-a="rv_favonly">Favourites</button></div><div class="seg"><button class="${S.rvMode!=='quiz'?'on':''}" data-a="rv_mode" data-v="word">Word</button><button class="${S.rvMode==='quiz'?'on':''}" data-a="rv_mode" data-v="quiz">Sentence quiz</button></div></div>`;
+  const bank=S.rvSrc==='bank';
+  const count=cat=>pool.filter(c=>cat==='All'||c.cat===cat).length;
+  const cats=['All',...REVIEW_CATS.filter(c=>count(c))];
+  const cur=S.rvCat||'All';
+  const src=`<div class="seg"><button class="${!bank?'on':''}" data-a="rv_src" data-v="ours">Our words</button><button class="${bank?'on':''}" data-a="rv_src" data-v="bank">Words Bank</button></div>`;
+  const chips=`<div class="chips">${cats.map(c=>`<button class="${cur===c?'on':''}" data-a="rv_cat" data-v="${e(c)}">${e(c)} <small>${count(c)}</small></button>`).join('')}<button class="${S.rvFav?'on':''}" data-a="rv_favonly">Favourites</button></div>`;
+  const topics=bank?['All',...[...new Set(pool.filter(c=>cur==='All'||c.cat===cur).map(c=>c.topic))].sort()]:[];
+  const topicSel=bank?`<div><select id="rvt" class="rvsel" aria-label="Topic">${topics.map(t=>`<option ${(S.rvTopic||'All')===t?'selected':''} value="${e(t)}">${t==='All'?'All topics':e(t)}</option>`).join('')}</select></div>`:'';
+  const mode=`<div class="seg"><button class="${S.rvMode!=='quiz'?'on':''}" data-a="rv_mode" data-v="word">Word</button><button class="${S.rvMode==='quiz'?'on':''}" data-a="rv_mode" data-v="quiz">Sentence quiz</button></div>`;
+  const head=`<div class="card">${src}${chips}${topicSel}${mode}</div>`;
   const rv=S.rv,total=rv.cards.length;
-  if(!total)return head+'<div class="card"><p class="mut">Nothing is due for review right now. Come back tomorrow, or pick another topic.</p></div>';
+  if(!total)return head+`<div class="card"><p class="mut">${pool.length?'Nothing is due for review right now. Come back tomorrow, or pick another category.':(bank?'The Words Bank is empty.':'You have no words here yet. Add some in Input, or switch to Words Bank.')}</p></div>`;
   if(rv.i>=total){
-    const miss=rv.no.map(id=>ENTRIES.find(x=>x.id===id)).filter(Boolean);
-    return head+`<div class="card"><h3>Review done</h3><p class="mut">Remembered ${rv.ok.length} of ${total}. Need practice: ${rv.no.length}. Words you missed come back tomorrow.</p><div class="row2"><button class="pri" data-a="rv_new">Review more</button>${rv.no.length?'<button class="pri ghost" data-a="rv_missed">Practise missed words</button>':''}</div></div>${miss.length?`<div class="card"><h3>To practise</h3>${miss.map(x=>`<div class="item"><span><b>${e(wordOf(x))}</b> <small class="mut">${x.c}</small></span><small>${e(x.v.meaning||'')}</small></div>`).join('')}</div>`:''}`;
+    const miss=rv.no.map(rvCard).filter(Boolean);
+    return head+`<div class="card"><h3>Review done</h3><p class="mut">Remembered ${rv.ok.length} of ${total}. Need practice: ${rv.no.length}. Words you missed come back tomorrow.</p><div class="row2"><button class="pri" data-a="rv_new">Review more</button>${rv.no.length?'<button class="pri ghost" data-a="rv_missed">Practise missed words</button>':''}</div></div>${miss.length?`<div class="card"><h3>To practise</h3>${miss.map(x=>`<div class="item"><span><b>${e(x.word)}</b> <small class="mut">${e(x.cat)}</small></span><small>${e(x.meaning)}</small></div>`).join('')}</div>`:''}`;
   }
-  const en=ENTRIES.find(x=>x.id===rv.cards[rv.i]);
-  if(!en){S.rv.i++;return reviewScreen()}
-  const word=wordOf(en),ex=en.v.qEx||en.v.bEx||'',isFav=fav.includes(word.toLowerCase());
+  const c=rvCard(rv.cards[rv.i]);
+  if(!c){S.rv.i++;return reviewScreen()}
+  const word=c.word,ex=c.ex,isFav=fav.includes(word.toLowerCase());
   const quiz=S.rvMode==='quiz';
+  const info=`<div class="fixbox" style="margin-top:12px;text-align:left"><p><b>Meaning:</b> ${e(c.meaning)}</p>${c.extra?`<p style="margin-top:6px">${e(c.extra)}</p>`:''}${ex?`<p style="margin-top:8px">${hl(ex,word)}</p>`:''}</div>`;
   let body;
   if(quiz&&!rv.reveal){
-    const sentence=ex?blankIt(ex,word):e(en.v.meaning||'');
-    body=`<div class="mut">Fill in the missing word</div><div style="font-size:19px;margin:12px 0;line-height:1.5">${sentence}</div><input id="rvq" placeholder="Type the word"><button class="pri" data-a="rv_check">Check</button>`;
+    const canBlank=ex&&hasKw(ex,word);
+    const prompt=canBlank?blankIt(ex,word):e(c.meaning);
+    body=`<div class="mut">${canBlank?'Fill in the missing word':(c.cat==='Grammar'?'Name the grammar for this rule':'Type the word that means')}</div><div style="font-size:19px;margin:12px 0;line-height:1.5">${prompt}</div><input id="rvq" placeholder="Type the word"><button class="pri" data-a="rv_check">Check</button>`;
   } else if(quiz){
     const res=rv.checked;
-    body=`<div class="${res&&res.ok?'msg':'warn'}">${res?(res.ok?'Correct':'Not quite'):'Answer'}${res&&!res.ok&&res.typed?': you wrote "'+e(res.typed)+'"':''}</div><div style="font-size:19px;margin:12px 0">${hl(ex||word,word)}</div><p><b>Meaning:</b> ${e(en.v.meaning||'')}</p>`;
+    body=`<div class="${res&&res.ok?'msg':'warn'}">${res?(res.ok?'Correct':'Not quite'):'Answer'}${res&&!res.ok&&res.typed?': you wrote "'+e(res.typed)+'"':''}</div><div style="font-size:24px;font-weight:800;margin-top:10px">${e(word)}</div>${info}`;
   } else if(!rv.reveal){
     body=`<div class="mut">Recall this</div><div style="font-size:28px;font-weight:800;margin-top:8px">${e(word)}</div>`;
   } else {
-    body=`<div class="mut">Recall this</div><div style="font-size:28px;font-weight:800;margin-top:8px">${e(word)}</div><div class="fixbox" style="margin-top:12px"><p><b>Meaning:</b> ${e(en.v.meaning||'')}</p>${ex?`<p style="margin-top:8px">${hl(ex,word)}</p>`:''}</div>`;
+    body=`<div class="mut">Recall this</div><div style="font-size:28px;font-weight:800;margin-top:8px">${e(word)}</div>${info}`;
   }
   let actions;
   if(!rv.reveal)actions=quiz?'<button class="ghostbtn" data-a="rv_reveal" style="margin-top:12px">Show answer</button>':'<button class="pri" data-a="rv_reveal" style="margin-top:14px">Show meaning</button>';
   else actions=`<div class="row2" style="margin-top:14px"><button class="pri" data-a="rv_ok">Remembered</button><button class="pri ghost" data-a="rv_no">Need practice</button></div><p class="mut" style="text-align:center;margin:8px 0 0">or swipe right / left</p>`;
   const star=`<button class="ghostbtn" data-a="rv_fav" data-w="${e(word.toLowerCase())}">${isFav?'Saved':'Save word'}</button>`;
-  return head+`<div class="card" id="rvcard"><div class="row2" style="justify-content:space-between"><b>Card ${rv.i+1} of ${total}</b><span class="pill" style="background:${COL[en.c]||'var(--soft)'}">${en.c}</span></div><div class="bar" style="margin:12px 0"><i style="width:${Math.round(rv.i/total*100)}%"></i></div><div style="text-align:center;padding:14px 6px">${body}</div>${actions}</div><div class="card row2" style="justify-content:space-between">${star}<small class="mut">Remembered ${rv.ok.length} · Need practice ${rv.no.length}</small><button class="ghostbtn" data-a="rv_new">New 20</button></div>`;
+  return head+`<div class="card" id="rvcard"><div class="row2" style="justify-content:space-between"><b>Card ${rv.i+1} of ${total}</b><span class="pill" style="background:${COL[c.cat]||'var(--soft)'}">${e(c.cat)}</span></div><div class="bar" style="margin:12px 0"><i style="width:${Math.round(rv.i/total*100)}%"></i></div><div style="text-align:center;padding:14px 6px">${body}</div>${actions}</div><div class="card row2" style="justify-content:space-between">${star}<small class="mut">Remembered ${rv.ok.length} · Need practice ${rv.no.length}</small><button class="ghostbtn" data-a="rv_new">New 20</button></div>`;
 }
 
 // ---------- streak, weekly summary, export ----------
@@ -859,11 +919,12 @@ document.addEventListener('click',ev=>{
   else if(a==='dv'){S.dv=v;}
   else if(a==='dview'){S.dview=v;}
   else if(a==='markread'){markAllRead();S.msg='All notifications marked as read.';}
-  else if(a==='rv_topic'){S.rvTopic=v;startReview();}
+  else if(a==='rv_src'){S.rvSrc=v;S.rvCat='All';S.rvTopic='All';startReview();}
+  else if(a==='rv_cat'){S.rvCat=v;S.rvTopic='All';startReview();}
   else if(a==='rv_favonly'){S.rvFav=!S.rvFav;startReview();}
   else if(a==='rv_mode'){S.rvMode=v;if(S.rv){S.rv.reveal=false;S.rv.checked=null}}
   else if(a==='rv_reveal'){S.rv.reveal=true;S.rv.checked=null;}
-  else if(a==='rv_check'){const en=ENTRIES.find(x=>x.id===S.rv.cards[S.rv.i]);const typed=(document.getElementById('rvq')||{value:''}).value;if(en){S.rv.checked={ok:quizOk(typed,wordOf(en)),typed:typed.trim()};S.rv.reveal=true;}}
+  else if(a==='rv_check'){const c=rvCard(S.rv.cards[S.rv.i]);const typed=(document.getElementById('rvq')||{value:''}).value;if(c){S.rv.checked={ok:quizOk(typed,c.word),typed:typed.trim()};S.rv.reveal=true;}}
   else if(a==='rv_ok'||a==='rv_no'){rvAnswer(a==='rv_ok')}
   else if(a==='rv_fav'){const f=favGet(),w=t.dataset.w;localStorage.setItem('qnb_fav',JSON.stringify(f.includes(w)?f.filter(x=>x!==w):[...f,w]));}
   else if(a==='rv_new'){startReview();}
@@ -898,6 +959,7 @@ document.addEventListener('input',ev=>{
 });
 document.addEventListener('change',ev=>{
   if(ev.target.id==='bt'){S.bt=ev.target.value;render();}
+  if(ev.target.id==='rvt'){S.rvTopic=ev.target.value;startReview();render();}
   if(ev.target.dataset&&ev.target.dataset.tg){ensureDraft();S.dT[ev.target.dataset.tg]=Math.max(0,parseInt(ev.target.value,10)||0);render();}
   if(ev.target.id==='picfile'){const f=ev.target.files[0];if(f){const rd=new FileReader();rd.onload=()=>{
     if(REMOTE){const data=String(rd.result).split(',')[1];api({action:'picture',name:f.name,mime:f.type||'image/png',data:data}).then(r=>{S.msg=r.error||'Picture uploaded. Both of you see the same one.';return loadState()}).then(render);return;}
