@@ -224,6 +224,10 @@ textarea.rvs{width:100%;font:inherit;padding:11px 12px;border-radius:14px;border
 .hist .h{font-size:12px;color:var(--mut);font-weight:700;text-transform:uppercase}
 .sres{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed var(--line)}
 .sres:last-child{border-bottom:0}
+.aiwrap{margin:10px 0}
+.aibox{background:var(--soft);border-radius:14px;padding:12px 14px;text-align:left}
+.aibox p{margin:6px 0}
+.aibox .ghostbtn{margin:6px 6px 0 0}
 /* ---- sidebar cleanup (desktop) ---- */
 .tabs button{position:relative}
 @media(min-width:761px){
@@ -369,7 +373,7 @@ function analyzeView(){
   <div class="card"><h3>Analyze Data · today's picture</h3>${picBlock}
   <label>Your analysis (${NAME[by]})</label><textarea data-f="${k}" style="width:100%;min-height:120px;border-radius:14px;padding:12px;font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink)" placeholder="Write your analysis">${e(S.f[k]||'')}</textarea>
   <div class="genbox"><span>${NAME[other]}'s analysis</span><span class="wait">${otherDone}</span></div>
-  <button class="pri" data-a="submit">Submit analysis</button></div>
+  ${aiBox('form')}<button class="pri" data-a="submit">Submit analysis</button></div>
   <div class="card"><h3>Today's analyses</h3>${table('Analyze Data',[row])}</div>`;
 }
 
@@ -456,7 +460,7 @@ function inputToday(){
   const msg=S.msg?`<div class="msg">${e(S.msg)}</div>`:'';
   const rows=ENTRIES.filter(x=>x.c===S.cat&&x.d===TODAYS).sort((a,b)=>b.id-a.id);
   return msg+`<div class="card"><h3>Daily input · ${e(C.tab)}</h3>${who}<label>Pick today's category (one only)</label><div class="todos">${todo}</div></div>
-  <div class="card"><label>Source</label>${srcSeg}${bankCtl}${bankList}${sameTopic}<div id="dupslot">${dupBox}</div>${fields}${genBtn}<button id="subbtn" class="pri" data-a="submit" ${dupE?'disabled':''}>Submit to ${e(C.tab)}</button></div>
+  <div class="card"><label>Source</label>${srcSeg}${bankCtl}${bankList}${sameTopic}<div id="dupslot">${dupBox}</div>${fields}${genBtn}${aiBox('form')}<button id="subbtn" class="pri" data-a="submit" ${dupE?'disabled':''}>Submit to ${e(C.tab)}</button></div>
   <div class="card"><h3>Today in ${e(C.tab)}</h3>${table(S.cat,rows)}</div>`;
 }
 
@@ -839,7 +843,7 @@ function rvRecord(key,ok){
   if(ok){r.box=Math.min(r.box+1,SRS_INT.length-1);r.due=addDays(TODAYS,SRS_INT[r.box])}else{r.box=0;r.due=addDays(TODAYS,1)}
   r.last=TODAYS;r.lastOk=ok;srs[w]=r;srsSet(srs);
 }
-function rvAnswer(ok){S.heard=null;const id=S.rv.cards[S.rv.i];rvRecord(id,ok);(ok?S.rv.ok:S.rv.no).push(id);S.rv.i++;S.rv.reveal=false;S.rv.checked=null}
+function rvAnswer(ok){S.heard=null;S.ai=null;const id=S.rv.cards[S.rv.i];rvRecord(id,ok);(ok?S.rv.ok:S.rv.no).push(id);S.rv.i++;S.rv.reveal=false;S.rv.checked=null}
 function blankIt(ex,kw){
   const re=new RegExp('(?<![A-Za-z])('+kwPattern(kw)+')(?![A-Za-z])','gi');
   let out='',last=0,m;const t=String(ex);
@@ -906,7 +910,7 @@ function reviewScreen(){
     body=`<div class="mut">Write your own sentence with</div>${big(word)}<p class="mut" style="margin-top:6px">${e(c.meaning)}</p><textarea id="rvs" class="rvs" placeholder="Your sentence (any form of the word is fine)"></textarea><button class="pri" data-a="rv_use">Check my sentence</button>`;
   } else if(task==='use'){
     const fb=!res?'Here is an example.':res.ok?'Nice! Your sentence uses the word. Read it once more and check the grammar.':(!hasKw(res.typed,word)?'Your sentence needs to include "'+e(word)+'" (any form is fine).':'Make it a full sentence (at least 4 words).');
-    body=`<div class="${res&&res.ok?'msg':'warn'}">${fb}</div>${res&&res.typed?`<p style="font-size:18px;margin:10px 0">${hl(res.typed,word)} ${sayBtn(res.typed)}</p>`:''}${big(word)}${info}${micBlock(res&&res.ok?res.typed:(ex||word))}`;
+    body=`<div class="${res&&res.ok?'msg':'warn'}">${fb}</div>${res&&res.typed?`<p style="font-size:18px;margin:10px 0">${hl(res.typed,word)} ${sayBtn(res.typed)}</p>${aiBox('use')}`:''}${big(word)}${info}${micBlock(res&&res.ok?res.typed:(ex||word))}`;
   } else {
     body=`<div class="mut">Recall this</div>${big(word)}${rv.reveal?info+micBlock(ex||word):''}`;
   }
@@ -1006,6 +1010,35 @@ function librarySearch(){
   const list=hits.slice(0,60).map(x=>{const w=x.v.word||x.v.title||'(Analyze Data)';return `<div class="item" data-a="logcat" data-v="${e(x.c)}"><span><b>${hl(w,q)}</b> <small class="mut">${e(x.c)} · ${e(NAME[x.u]||'')} · ${fmtDate(x.d)}</small></span><small>${e(x.v.meaning||x.v.rules||x.v.review||'')}</small></div>`}).join('')
     +mis.map(m=>`<div class="item mistake"><span><span class="wrongtxt">${e(m.wrong)}</span> → <b>${e(m.right)}</b> <small class="mut">Mistake · ${e(m.by)}</small></span></div>`).join('');
   return box+`<div class="card"><h3>${hits.length+mis.length} result${hits.length+mis.length===1?'':'s'} for “${e(S.lq)}”</h3>${list||'<p class="mut">Nothing found.</p>'}${hits.length>60?'<p class="mut">Showing the first 60.</p>':''}</div>`;
+}
+
+// ---------- AI grammar check (Gemini free tier, called through the Apps Script so the key stays private) ----------
+const AI_ON=()=>!!(REMOTE&&REMOTE.aiOn);
+function aiFormKey(){return S.cat==='Movie'?'review':S.cat==='Analyze Data'?ownKey('Analyze Data',S.by):ownKey(S.cat,S.by)}
+function aiBox(where){
+  if(!AI_ON())return '';
+  const r=S.ai&&S.ai.where===where?S.ai:null;
+  const btn=`<button class="ghostbtn" data-a="aiCheck" data-w="${where}">✨ ${r&&r.res?'Check again':'Check grammar with AI'}</button>`;
+  if(r&&r.loading)return '<div class="aiwrap"><p class="mut">✨ Checking your English…</p></div>';
+  if(r&&r.error)return `<div class="aiwrap"><div class="warn">${e(r.error)}</div>${btn}</div>`;
+  if(r&&r.res){
+    const x=r.res,changed=x.better&&x.better.trim()!==r.text.trim();
+    return `<div class="aiwrap"><div class="aibox"><b>${x.correct?'✅ Looks correct!':'✏️ Suggested fix'}</b>${changed?`<p class="righttxt">${e(x.better)} ${sayBtn(x.better)}</p>`:''}${x.tip?`<p class="mut">${e(x.tip)}</p>`:''}${changed&&where!=='use'?'<button class="ghostbtn" data-a="aiUse">Use this version</button>':''}${btn}${r.left!=null?`<p class="mut" style="font-size:12px">${r.left} AI checks left today.</p>`:''}</div></div>`;
+  }
+  return `<div class="aiwrap">${btn}</div>`;
+}
+function runAiCheck(where){
+  let text='',word='',cat='';
+  if(where==='use'){const c=S.rv&&rvCard(S.rv.cards[S.rv.i]);text=S.rv&&S.rv.checked?S.rv.checked.typed:'';word=c?c.word:'';cat=c?c.cat:'';}
+  else{text=S.f[aiFormKey()]||'';word=S.f.word||S.f.title||'';cat=S.cat;}
+  text=String(text).trim();
+  if(!text){S.msg='Write your sentence first.';render();return}
+  S.ai={where:where,text:text,loading:true};render();
+  api({action:'aiCheck',text:text,word:word,cat:cat}).then(r=>{
+    if(!S.ai||S.ai.where!==where)return;
+    S.ai=r.error?{where:where,text:text,error:r.error}:{where:where,text:text,res:r.result,left:r.left};
+    render();
+  });
 }
 
 // ---------- mistakes log (Input → Mistakes) ----------
@@ -1207,7 +1240,7 @@ document.addEventListener('click',ev=>{
   else if(a==='screen'){S.screen=v;S.msg='';S.fullTbl=false;setTimeout(saveSession,0);if(v==='notes')S.seen=visNotes().length;}
   else if(a==='cat'){S.screen='input';S.cat=v;S.f={};S.gen=null;S.msg='';}
   else if(a==='goanswer'){S.screen='input';S.inTab='answer';S.msg='';}
-  else if(a==='todo'){S.cat=v;S.f={};S.gen=null;S.msg='';S.lateDay=null;}
+  else if(a==='todo'){S.ai=null;S.cat=v;S.f={};S.gen=null;S.msg='';S.lateDay=null;}
   else if(a==='by'){if(!REMOTE)S.by=v;S.msg='';}
   else if(a==='src'){S.src=v;S.gen=null;S.f={};}
   else if(a==='pick'){pickBank(v);}
@@ -1231,6 +1264,8 @@ document.addEventListener('click',ev=>{
   else if(a==='delMistake'){if(!confirm('Delete this mistake?'))return;
     if(REMOTE){S.msg='Deleting…';render();api({action:'deleteMistake',row:id}).then(r=>{S.msg=r.error||'Mistake deleted.';render()});return;}
     const i=MISTAKES.findIndex(m=>m.row===id);if(i>=0)MISTAKES.splice(i,1);}
+  else if(a==='aiCheck'){runAiCheck(t.dataset.w);return}
+  else if(a==='aiUse'){if(S.ai&&S.ai.res){S.f[aiFormKey()]=S.ai.res.better;S.ai=null;S.msg='Updated. Read it once more, then submit.';}}
   else if(a==='prtab'){S.prTab=v;S.msg='';}
   else if(a==='goreview'){S.screen='review';S.prTab='review';}
   else if(a==='goduel'){S.screen='review';S.prTab='duel';}
@@ -1276,7 +1311,7 @@ document.addEventListener('click',ev=>{
 });
 document.addEventListener('input',ev=>{
   const k=ev.target.dataset&&ev.target.dataset.f;
-  if(k){S.f[k]=ev.target.value;syncDup();}
+  if(k){S.f[k]=ev.target.value;syncDup();if(S.ai&&S.ai.where==='form'&&!S.ai.loading&&k===aiFormKey())S.ai=null;}
 });
 document.addEventListener('change',ev=>{
   if(ev.target.id==='bt'){S.bt=ev.target.value;render();}
