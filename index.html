@@ -492,7 +492,12 @@ function cellHtml(x,k){
   const val=x.v[k];
   if(isOwn(k)||k==='qEx'||k==='bEx'){
     const owner=ownerOf(k);
-    if(String(val||'').trim())return hl(val,['Idiom','Slang','Phrasal Verb','Vocabulary'].includes(x.c)?x.v.word:'');
+    // Your own answer on your partner's entry (or your own analysis) can be edited
+    const canEditAns=REMOTE&&owner===S.by&&x.row&&(x.c==='Analyze Data'||(x.u!==S.by&&x.u!=='prompt'));
+    if(String(val||'').trim()){
+      if(canEditAns&&S.editAns===x.id+'|'+k)return `<div class="exrow"><input id="ea${x.id}" value="${e(val)}" style="min-width:160px"><button data-a="saveAns" data-id="${x.id}" data-k="${k}">Save</button></div><button class="ghostbtn" data-a="cancelAns">Cancel</button>`;
+      return hl(val,['Idiom','Slang','Phrasal Verb','Vocabulary','Expression'].includes(x.c)?x.v.word:'')+(canEditAns?`<div><button class="ghostbtn" data-a="editAns" data-id="${x.id}" data-k="${k}">Edit</button></div>`:'');
+    }
     if(owner===S.by&&x.u!==S.by&&x.u!=='prompt')return `<div class="exrow"><input id="a${x.id}" placeholder="Your answer"><button data-a="ans" data-id="${x.id}" data-k="${k}">Save</button></div>`;
     return `<span class="wait">waiting for ${NAME[owner]}</span>`;
   }
@@ -1027,6 +1032,11 @@ document.addEventListener('click',ev=>{
   else if(a==='logcat'){S.logCat=v;S.fullTbl=false;}
   else if(a==='startEdit'){S.editId=id;}
   else if(a==='cancelEdit'){S.editId=null;}
+  else if(a==='editAns'){S.editAns=id+'|'+t.dataset.k;S.editId=null;}
+  else if(a==='cancelAns'){S.editAns=null;}
+  else if(a==='saveAns'){const en=ENTRIES.find(x=>x.id===id);const val=(document.getElementById('ea'+id)||{value:''}).value.trim();
+    if(!en||!val){S.msg='Write your answer first.';}
+    else{S.editAns=null;S.msg='Saving…';render();api({action:'answer',cat:en.c,row:en.row,text:val,replace:'1'}).then(r=>{S.msg=r.error||'Answer updated.';render()});return;}}
   else if(a==='savEdit'){const en=ENTRIES.find(x=>x.id===id);if(en){const values={};CATS[en.c].f.forEach(([k,,kind])=>{if(kind!=='auto'&&(!/^[qb](Ex|J|A)$/.test(k)||k===ownKey(en.c,S.by))){const el=document.getElementById('ed_'+k);if(el)values[k]=el.value.trim()}});S.editId=null;S.msg='Saving…';render();api({action:'edit',cat:en.c,row:en.row,values:values}).then(r=>{S.msg=r.error||'Changes saved.';render()});return;}}
   else if(a==='delEntry'){const en=ENTRIES.find(x=>x.id===id);if(en&&confirm('Delete this entry? This cannot be undone.')){S.msg='Deleting…';render();api({action:'delete',cat:en.c,row:en.row}).then(r=>{S.msg=r.error||'Entry deleted.';render()});return;}}
   else if(a==='refresh'){S.msg='Refreshing…';loadState(true).then(ok=>{S.msg=ok?'Up to date.':S.msg;render()});return;}
