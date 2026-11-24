@@ -202,20 +202,44 @@ button.opt:hover,button.opt:focus-visible{border-color:var(--a);background:var(-
 .spin{width:34px;height:34px;border-radius:50%;border:4px solid var(--soft);border-top-color:var(--a);animation:spin .9s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.spin{animation-duration:3s}}
+.mgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}
+@media(max-width:560px){.mgrid{grid-template-columns:repeat(3,1fr)}}
+.mbox{background:var(--soft);border-radius:14px;padding:10px 6px;text-align:center}
+.mbox b{display:block;font-size:22px}
+.mbox small{color:var(--mut);font-size:12px}
+.wrongtxt{color:#c0264a;text-decoration:line-through;text-decoration-thickness:1.5px}
+body.dark .wrongtxt{color:#ff8fa3}
+.righttxt{font-weight:700;margin:4px 0}
+.iconbtn{border:0;background:var(--soft);color:var(--ink);border-radius:999px;width:32px;height:32px;cursor:pointer;font-size:15px;vertical-align:middle;margin-left:6px;flex:none}
+.iconbtn:hover{background:var(--line)}
+.item.mistake{align-items:flex-start;cursor:default}
+textarea.rvs{width:100%;font:inherit;padding:11px 12px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);resize:vertical;min-height:84px;margin:10px 0}
+.lvpill{padding:4px 10px;border-radius:99px;font-size:12px;font-weight:700;background:var(--soft);color:var(--ink)}
+.speak{margin-top:12px;text-align:center}
+.speak p{margin-top:8px}
+.duelgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.duelgrid .mbox b{font-size:28px;margin:4px 0}
+.duelgrid .mbox.win{outline:2px solid var(--a)}
+.hist{display:grid;grid-template-columns:auto 1fr 1fr auto;gap:6px 14px;align-items:center;font-size:14px}
+.hist .h{font-size:12px;color:var(--mut);font-weight:700;text-transform:uppercase}
+.sres{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed var(--line)}
+.sres:last-child{border-bottom:0}
 /* ---- sidebar cleanup (desktop) ---- */
 .tabs button{position:relative}
 @media(min-width:761px){
   .shell{grid-template-columns:264px 1fr}
-  .side{display:grid;grid-template-columns:1fr auto auto;grid-auto-rows:min-content;align-content:start;column-gap:8px;row-gap:0;padding:24px 18px}
+  .side{display:grid;grid-template-columns:1fr auto auto auto;grid-auto-rows:min-content;align-content:start;column-gap:8px;row-gap:0;padding:24px 18px}
   .side .toprow{display:contents}
   .side .logo{grid-row:1;grid-column:1/-1;gap:12px;margin-bottom:22px}
   .side .logo svg{width:44px;height:44px}
   .side .brand{font-size:17px;line-height:1.2;white-space:nowrap}
   .side .tagline{font-size:12px;margin-top:3px}
-  .side #date{grid-row:2;grid-column:1;align-self:center;margin:0;font-size:13px}
-  .side .bell{grid-row:2;width:38px;height:38px}
+  .side #date{grid-row:2;grid-column:1;align-self:center;margin:0;font-size:12px;white-space:nowrap}
+  .side .bell{grid-row:2;width:34px;height:34px}
+  .side .bell svg{width:18px;height:18px}
   .side [data-a=refresh]{grid-column:2}
-  .side #bell{grid-column:3}
+  .side #gear{grid-column:3}
+  .side #bell{grid-column:4}
   .side .bell svg{width:19px;height:19px}
   .side #acct{grid-row:3;grid-column:1/-1;margin:16px 0 18px}
   .side .tabs{grid-row:4;grid-column:1/-1}
@@ -230,7 +254,7 @@ button.opt:hover,button.opt:focus-visible{border-color:var(--a);background:var(-
 <body data-mode="bella">
 <div class="shell">
   <aside class="side">
-    <div class="toprow"><div class="logo"><svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true"><rect width="40" height="40" rx="12" style="fill:#B9A58F"/><path d="M8 11h24a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-9l-5 4v-4H8a3 3 0 0 1-3-3V14a3 3 0 0 1 3-3z" style="fill:#fff"/><text x="20" y="24.5" text-anchor="middle" font-family="Poppins,system-ui,sans-serif" font-weight="800" font-size="9.5" letter-spacing="0.3" style="fill:#B9A58F">QnB</text></svg><div><div class="brand">English with QnB</div><div class="tagline">Learn and grow every day!</div></div></div><button class="bell" data-a="refresh" aria-label="Refresh" title="Refresh"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg></button><button class="bell" id="bell" data-a="screen" data-v="notes" aria-label="Notifications"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16V11a6 6 0 0 0-12 0v5l-2 2h16z"/><path d="M10 21a2 2 0 0 0 4 0"/></svg><span class="badge" id="badge"></span></button></div>
+    <div class="toprow"><div class="logo"><svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true"><rect width="40" height="40" rx="12" style="fill:#B9A58F"/><path d="M8 11h24a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-9l-5 4v-4H8a3 3 0 0 1-3-3V14a3 3 0 0 1 3-3z" style="fill:#fff"/><text x="20" y="24.5" text-anchor="middle" font-family="Poppins,system-ui,sans-serif" font-weight="800" font-size="9.5" letter-spacing="0.3" style="fill:#B9A58F">QnB</text></svg><div><div class="brand">English with QnB</div><div class="tagline">Learn and grow every day!</div></div></div><button class="bell" data-a="refresh" aria-label="Refresh" title="Refresh"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg></button><button class="bell" id="gear" data-a="screen" data-v="settings" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button><button class="bell" id="bell" data-a="screen" data-v="notes" aria-label="Notifications"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16V11a6 6 0 0 0-12 0v5l-2 2h16z"/><path d="M10 21a2 2 0 0 0 4 0"/></svg><span class="badge" id="badge"></span></button></div>
     <div id="date" class="mut"></div>
     <div id="acct"></div>
     <nav class="tabs" id="tabs"></nav>
@@ -357,7 +381,7 @@ function home(){
   const w=REMOTE?REMOTE.waiting:waitingFor(S.mode==='combined'?S.by:S.mode).filter(x=>x.u!=='prompt');
   const tiles=cats.map(c=>{const d=us.reduce((a,u)=>a+subsN(u,c,'day'),0),g=TGT[c]*us.length;return `<div class="stat" style="border-left:6px solid ${COL[c]}"><div class="mut">${c}</div><div class="big">${d}<small class="mut">/${g}</small></div>${bar(pct(d,g))}</div>`}).join('');
   const list=w.slice(0,6).map(x=>{const word=REMOTE?x.word:(x.v.word||x.v.title||''),cat=REMOTE?x.cat:x.c,who=REMOTE?x.by:(NAME[x.u]||''),d=REMOTE?x.date:x.d;return `<div class="item"><span><b>${e(word)}</b> <small class="mut">${e(cat)} · ${e(who)} · ${fmtDate(d)}</small></span><button class="pri ghost" style="width:auto;margin:0;padding:6px 12px" data-a="goanswer">Answer</button></div>`}).join('')||'<p class="mut">Nothing waiting for you. </p>';
-  return homeExtras()+`<div class="card row2">${donut(pct(got,goal),'var(--a)')}<div><h2 style="margin:0 0 4px;font-size:22px">${S.mode==='combined'?'Team today':'Hi '+NAME[S.mode]+' '}</h2><div class="mut">Today is ${TODAYNAME}. Your to-do: ${cats.join(', ')}</div></div></div>
+  return homeExtras()+practiceCard()+`<div class="card row2">${donut(pct(got,goal),'var(--a)')}<div><h2 style="margin:0 0 4px;font-size:22px">${S.mode==='combined'?'Team today':'Hi '+NAME[S.mode]+' '}</h2><div class="mut">Today is ${TODAYNAME}. Your to-do: ${cats.join(', ')}</div></div></div>
   <div class="card"><h3>Today's to-do</h3><div class="grid4">${tiles}</div></div>
   <div class="card"><h3>Waiting for your answer (${w.length})</h3>${list}</div>`;
 }
@@ -385,7 +409,7 @@ function lateCard(){
 }
 function subtabs(){
   const n=REMOTE?REMOTE.waiting.length:waitingFor(S.by).filter(x=>x.u!=='prompt').length;
-  return `<div class="seg">${[['today','Today'],['catch','Catch up'],['answer',`Answer (${n})`]].map(([v,l])=>`<button class="${S.inTab===v?'on':''}" data-a="intab" data-v="${v}">${l}</button>`).join('')}</div>`;
+  return `<div class="seg">${[['today','Today'],['catch','Catch up'],['answer',`Answer (${n})`],['mistakes',`Mistakes (${MISTAKES.length})`]].map(([v,l])=>`<button class="${S.inTab===v?'on':''}" data-a="intab" data-v="${v}">${l}</button>`).join('')}</div>`;
 }
 function answerList(){
   if(REMOTE){
@@ -401,6 +425,7 @@ function input(){
   const tabs=subtabs();
   if(S.inTab==='catch')return tabs+lateCard();
   if(S.inTab==='answer')return tabs+answerList();
+  if(S.inTab==='mistakes')return tabs+mistakesTab();
   return tabs+inputToday();
 }
 function inputToday(){
@@ -523,13 +548,18 @@ function table(c,rows){
   return isMobile()?full+`<button class="pri ghost" data-a="fulltbl">Show preview</button>`:full;
 }
 function log(){
+  if(String(S.lq||'').trim())return librarySearch();
+  return librarySearch()+logTable();
+}
+function logTable(){
   const rows=ENTRIES.filter(x=>x.c===S.logCat).sort((a,b)=>b.id-a.id);
   const chips=CAT_ORDER.map(c=>`<button class="${S.logCat===c?'on':''}" data-a="logcat" data-v="${c}">${c}</button>`).join('');
   return `<div class="card"><h3>Full log · ${e(CATS[S.logCat].tab)}</h3><div class="chips">${chips}</div><p class="mut">Each row is one entry. Fill the empty answer box to answer your partner. Bold = the exact keyword. Underlined = another form of it, such as fell down for fall down.</p><button class="ghostbtn" data-a="csv">Export CSV</button></div><div class="card">${table(S.logCat,rows)}</div>`;
 }
 
 // ---- Dashboard (mirrors the DASHBOARD tab: submit and answer blocks) ----
-function dash(){
+function dash(){return masteryCard()+duelHistory()+dashCore()}
+function dashCore(){
   const dv=S.dv||(S.mode==='combined'?'combined':S.mode);
   const us=dv==='combined'?U:[dv],daily=S.dash==='daily';
   const r=daily?'day':'week',mult=daily?1:7;
@@ -566,12 +596,13 @@ function settingsScreen(){
   const tg=cats.map(c=>`<div class="tcell" style="--c:${COL[c]}"><span><i class="tdot"></i>${c}</span><input type="number" min="0" data-tg="${e(c)}" value="${dT[c]}"></div>`).join('');
   const ag=cats.filter(c=>c!=='Movie').map(c=>`<div class="tcell" style="--c:${COL[c]}"><span><i class="tdot"></i>${c}</span><input type="number" min="0" data-ag="${e(c)}" value="${S.dA[c]||0}"></div>`).join('');
   const days=WEEKDAYS_S.map(d=>`<div class="daycard"><div class="row2" style="justify-content:space-between"><b>${d}</b><small class="mut">${dS[d].length} ${dS[d].length===1?'category':'categories'}</small></div><div class="pilltg-wrap">${cats.map(c=>`<button class="pilltg ${dS[d].includes(c)?'on':''}" style="--c:${COL[c]}" data-a="sday" data-d="${d}" data-c="${e(c)}">${c}</button>`).join('')}</div></div>`).join('');
-  return `${bar}<div class="card"><h3>Daily target</h3><p class="mut">How many entries each category needs per day. Weekly goals update automatically.</p><div class="tgrid">${tg}</div></div><div class="card"><h3>Weekly schedule</h3><p class="mut">Tap a category to add or remove it on that day (up to 5 per day). Nothing changes until you save.</p>${days}</div><div class="card"><h3>Weekly answer goal</h3><p class="mut">How many of your partner's entries each of you should answer per week.</p><div class="tgrid">${ag}</div></div><div class="card"><h3>Appearance</h3><button class="ghostbtn" data-a="darkmode">${localStorage.getItem('qnb_dark')==='1'?'Switch to light':'Switch to dark'}</button></div><div class="card"><button class="pri ghost" data-a="resetsettings">Reset to default</button></div>`;
+  return `${bar}<div class="card"><h3>Daily target</h3><p class="mut">How many entries each category needs per day. Weekly goals update automatically.</p><div class="tgrid">${tg}</div></div><div class="card"><h3>Weekly schedule</h3><p class="mut">Tap a category to add or remove it on that day (up to 5 per day). Nothing changes until you save.</p>${days}</div><div class="card"><h3>Weekly answer goal</h3><p class="mut">How many of your partner's entries each of you should answer per week.</p><div class="tgrid">${ag}</div></div><div class="card"><h3>Appearance</h3><button class="ghostbtn" data-a="darkmode">${localStorage.getItem('qnb_dark')==='1'?'Switch to light':'Switch to dark'}</button><h3 style="margin-top:16px">Voice</h3><p class="mut">The accent used for 🔊 listening and 🎤 speaking practice.</p><div class="seg"><button class="${accent()==='en-US'?'on':''}" data-a="accent" data-v="en-US">American</button><button class="${accent()==='en-GB'?'on':''}" data-a="accent" data-v="en-GB">British</button></div></div><div class="card"><button class="pri ghost" data-a="resetsettings">Reset to default</button></div>`;
 }
 // ---------- backend (Google Apps Script web app) ----------
 const API='https://script.google.com/macros/s/AKfycbytB-S-YJ_R8ty6N83gkzUwBcU0y-GrRNT96oIkW0hehhk8vsnThBoncVwWEsGo7RpNdA/exec';
 const CLIENT_ID='356720291040-f136kpq5a2p7uq60lo7ev2alcmm5q51o.apps.googleusercontent.com';
 let ID_TOKEN=null, REMOTE=null;
+const MISTAKES=[],DUELS=[];
 function applyState(d){
   d.waiting=(d.waiting||[]).filter(x=>x.date>=MON);
   REMOTE=d;
@@ -580,6 +611,8 @@ function applyState(d){
   if(d.schedule){Object.keys(SCHED).forEach(k=>delete SCHED[k]);Object.assign(SCHED,d.schedule);}
   if(d.targets){Object.keys(TGT).forEach(k=>delete TGT[k]);Object.assign(TGT,d.targets);}
   if(d.answerGoals)Object.keys(d.answerGoals).forEach(k=>{ANS_W[k]=Number(d.answerGoals[k])||0});
+  if(d.mistakes){MISTAKES.length=0;d.mistakes.forEach(m=>MISTAKES.push(m));}
+  if(d.duels){DUELS.length=0;d.duels.forEach(x=>DUELS.push(x));}
   ENTRIES.length=0;
   const cats=Object.keys(CATS);
   (d.entries||[]).forEach(x=>{
@@ -692,7 +725,7 @@ function onCred(resp){
   });
 }
 const REVIEW_CATS=['Vocabulary','Slang','Idiom','Phrasal Verb','Expression','Grammar'];
-const SRS_INT=[1,3,7,14,30];
+const SRS_INT=[1,3,7,14,30,60]; // the last box = mastered, checked every 2 months
 // Review progress and favourites are kept per person (Bella and Qaulan no longer share them on one device)
 function perUser(base,def){
   const k=base+'_'+(S.by||'bella');
@@ -707,10 +740,21 @@ function addDays(d,n){const x=new Date(d+'T12:00:00');x.setDate(x.getDate()+n);r
 function wordOf(en){return String(en.v[CATS[en.c].gsrc]||'').trim()}
 function topicOf(w){const b=BANK.find(x=>x.w===String(w).toLowerCase());return b&&b.t?b.t:'Other'}
 // The word to recall for an entry (Grammar keeps its name in the "word" field)
+// Level of a word for this person: 1 recognise (A/B/C), 2 recall (type it), 3 use it (own sentence), 4 mastered
+function rvLevel(c){
+  if(!c||c.cat==='Mistake')return 0;
+  const r=srsGet()[c.word.toLowerCase()],b=r?r.box:0;
+  return b<=1?1:b<=3?2:b===4?3:4;
+}
+const LEVEL_NAME={1:'Level 1 · Recognise',2:'Level 2 · Recall',3:'Level 3 · Use it',4:'Mastered'};
 function rvWordOf(en){return String(en.c==='Grammar'?(en.v.word||''):wordOf(en)).trim()}
 // Turns a card key into one shape for both sources.
 // Our entries use their id (a number); Words Bank items use "b:<index>".
 function rvCard(key){
+  if(typeof key==='string'&&key.indexOf('m:')===0){
+    const m=MISTAKES.find(x=>String(x.row)===key.slice(2));if(!m)return null;
+    return {key:key,word:m.right,cat:'Mistake',meaning:m.why||'',extra:'',ex:m.right,wrong:m.wrong,by:m.by,topic:'Other'};
+  }
   if(typeof key==='string'&&key.indexOf('b:')===0){
     const b=BANK[Number(key.slice(2))];if(!b)return null;
     return {key:key,word:b.w,cat:b.c||'Word',meaning:b.m||'',extra:b.idm?'Indonesian: '+b.idm:'',ex:b.ex||'',topic:b.t||'Other'};
@@ -723,8 +767,45 @@ function rvCard(key){
     ex:en.v.qEx||en.v.bEx||'',topic:topicOf(w)};
 }
 function reviewPool(){
+  if(S.rvSrc==='mistakes')return MISTAKES.map(m=>rvCard('m:'+m.row)).filter(Boolean);
   if(S.rvSrc==='bank')return BANK.map((b,i)=>b&&b.w&&REVIEW_CATS.includes(b.c)?rvCard('b:'+i):null).filter(Boolean);
   return ENTRIES.filter(x=>REVIEW_CATS.includes(x.c)&&rvWordOf(x)).map(x=>rvCard(x.id)).filter(Boolean);
+}
+// ---------- listen and speak (built into the browser, free) ----------
+const accent=()=>localStorage.getItem('qnb_accent')||'en-US';
+function sayIt(text){
+  if(!('speechSynthesis' in window)){S.msg='Your browser cannot read aloud.';render();return}
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(String(text)),vs=speechSynthesis.getVoices();
+  u.lang=accent();u.rate=0.95;
+  const v=vs.find(x=>x.lang===accent())||vs.find(x=>x.lang.replace('_','-')===accent())||vs.find(x=>/^en/.test(x.lang));
+  if(v)u.voice=v;
+  speechSynthesis.speak(u);
+}
+const sayBtn=t=>t?`<button class="iconbtn" data-a="say" data-t="${e(t)}" aria-label="Listen" title="Listen">🔊</button>`:'';
+function matchScore(a,b){
+  const w=x=>String(x).toLowerCase().replace(/[’]/g,"'").replace(/[^a-z0-9' ]/g,' ').split(/\s+/).filter(Boolean);
+  const A=w(a),B=w(b);if(!A.length)return 0;
+  let hit=0;A.forEach(x=>{const i=B.indexOf(x);if(i>=0){hit++;B.splice(i,1)}});
+  return Math.round(hit/A.length*100);
+}
+function listenTo(target){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){S.msg='Speaking practice works in Chrome, Edge or Safari.';render();return}
+  const r=new SR();r.lang=accent();r.interimResults=false;r.maxAlternatives=1;
+  S.heard={t:target,said:'',score:null,on:true};render();
+  r.onresult=ev=>{const said=ev.results[0][0].transcript;S.heard={t:target,said:said,score:matchScore(target,said)};render()};
+  r.onerror=ev=>{S.heard=null;S.msg=ev.error==='not-allowed'?'Please allow microphone access to use this.':'I could not hear you. Try again.';render()};
+  r.onend=()=>{if(S.heard&&S.heard.on){S.heard=null;render()}};
+  try{r.start()}catch(err){S.heard=null;render()}
+}
+function micBlock(target){
+  if(!target)return '';
+  const h=S.heard&&S.heard.t===target?S.heard:null;
+  let res='';
+  if(h&&h.on)res='<p class="mut">Listening… speak now.</p>';
+  else if(h)res=`<p class="mut">I heard: “${e(h.said)}”</p><p><b>${h.score}% match</b> ${h.score>=90?'· Excellent!':h.score>=70?'· Good, try once more for 100%.':'· Listen with 🔊 and try again.'}</p>`;
+  return `<div class="speak"><button class="ghostbtn" data-a="mic" data-t="${e(target)}">🎤 Read it aloud</button>${res}</div>`;
 }
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 // Three choices (A, B, C): the right word plus two others, same category first. Fixed per card.
@@ -758,7 +839,7 @@ function rvRecord(key,ok){
   if(ok){r.box=Math.min(r.box+1,SRS_INT.length-1);r.due=addDays(TODAYS,SRS_INT[r.box])}else{r.box=0;r.due=addDays(TODAYS,1)}
   r.last=TODAYS;r.lastOk=ok;srs[w]=r;srsSet(srs);
 }
-function rvAnswer(ok){const id=S.rv.cards[S.rv.i];rvRecord(id,ok);(ok?S.rv.ok:S.rv.no).push(id);S.rv.i++;S.rv.reveal=false;S.rv.checked=null}
+function rvAnswer(ok){S.heard=null;const id=S.rv.cards[S.rv.i];rvRecord(id,ok);(ok?S.rv.ok:S.rv.no).push(id);S.rv.i++;S.rv.reveal=false;S.rv.checked=null}
 function blankIt(ex,kw){
   const re=new RegExp('(?<![A-Za-z])('+kwPattern(kw)+')(?![A-Za-z])','gi');
   let out='',last=0,m;const t=String(ex);
@@ -780,18 +861,20 @@ function bindSwipe(){
 function reviewScreen(){
   if(!S.rv)startReview();
   const fav=favGet(),pool=reviewPool();
-  const bank=S.rvSrc==='bank';
+  const src=S.rvSrc||'ours',bank=src==='bank',mis=src==='mistakes';
   const count=cat=>pool.filter(c=>cat==='All'||c.cat===cat).length;
   const cats=['All',...REVIEW_CATS.filter(c=>count(c))];
   const cur=S.rvCat||'All';
-  const src=`<div class="seg"><button class="${!bank?'on':''}" data-a="rv_src" data-v="ours">Our words</button><button class="${bank?'on':''}" data-a="rv_src" data-v="bank">Words Bank</button></div>`;
-  const chips=`<div class="chips">${cats.map(c=>`<button class="${cur===c?'on':''}" data-a="rv_cat" data-v="${e(c)}">${e(c)} <small>${count(c)}</small></button>`).join('')}<button class="${S.rvFav?'on':''}" data-a="rv_favonly">Favourites</button></div>`;
+  const srcSeg=`<div class="seg">${[['ours','Our words'],['mistakes','Mistakes'],['bank','Words Bank']].map(([v,l])=>`<button class="${src===v?'on':''}" data-a="rv_src" data-v="${v}">${l}</button>`).join('')}</div>`;
+  const chips=mis?'':`<div class="chips">${cats.map(c=>`<button class="${cur===c?'on':''}" data-a="rv_cat" data-v="${e(c)}">${e(c)} <small>${count(c)}</small></button>`).join('')}<button class="${S.rvFav?'on':''}" data-a="rv_favonly">Favourites</button></div>`;
   const topics=bank?['All',...[...new Set(pool.filter(c=>cur==='All'||c.cat===cur).map(c=>c.topic))].sort()]:[];
   const topicSel=bank?`<div><select id="rvt" class="rvsel" aria-label="Topic">${topics.map(t=>`<option ${(S.rvTopic||'All')===t?'selected':''} value="${e(t)}">${t==='All'?'All topics':e(t)}</option>`).join('')}</select></div>`:'';
-  const mode=`<div class="seg"><button class="${S.rvMode!=='quiz'?'on':''}" data-a="rv_mode" data-v="word">Word</button><button class="${S.rvMode==='quiz'?'on':''}" data-a="rv_mode" data-v="quiz">Sentence quiz</button></div>`;
-  const head=`<div class="card">${src}${chips}${topicSel}${mode}</div>`;
+  const smart=S.rvMode!=='word';
+  const mode=mis?'':`<div class="seg"><button class="${smart?'on':''}" data-a="rv_mode" data-v="smart">Smart practice</button><button class="${!smart?'on':''}" data-a="rv_mode" data-v="word">Flashcards</button></div>`;
+  const help=mis?'<p class="mut">Read the wrong sentence and say the correct version in your head, then check.</p>':smart?'<p class="mut">Each word moves up a level when you remember it: pick it (A/B/C), then type it, then use it in your own sentence.</p>':'';
+  const head=`<div class="card">${srcSeg}${chips}${topicSel}${mode}${help}</div>`;
   const rv=S.rv,total=rv.cards.length;
-  if(!total)return head+`<div class="card"><p class="mut">${pool.length?'Nothing is due for review right now. Come back tomorrow, or pick another category.':(bank?'The Words Bank is empty.':'You have no words here yet. Add some in Input, or switch to Words Bank.')}</p></div>`;
+  if(!total)return head+`<div class="card"><p class="mut">${pool.length?'Nothing is due for review right now. Come back tomorrow, or pick another category.':mis?'No mistakes saved yet. Add them in Input → Mistakes.':bank?'The Words Bank is empty.':'You have no words here yet. Add some in Input, or switch to Words Bank.'}</p></div>`;
   if(rv.i>=total){
     const miss=rv.no.map(rvCard).filter(Boolean);
     return head+`<div class="card"><h3>Review done</h3><p class="mut">Remembered ${rv.ok.length} of ${total}. Need practice: ${rv.no.length}. Words you missed come back tomorrow.</p><div class="row2"><button class="pri" data-a="rv_new">Review more</button>${rv.no.length?'<button class="pri ghost" data-a="rv_missed">Practise missed words</button>':''}</div></div>${miss.length?`<div class="card"><h3>To practise</h3>${miss.map(x=>`<div class="item"><span><b>${e(x.word)}</b> <small class="mut">${e(x.cat)}</small></span><small>${e(x.meaning)}</small></div>`).join('')}</div>`:''}`;
@@ -799,29 +882,147 @@ function reviewScreen(){
   const c=rvCard(rv.cards[rv.i]);
   if(!c){S.rv.i++;return reviewScreen()}
   const word=c.word,ex=c.ex,isFav=fav.includes(word.toLowerCase());
-  const quiz=S.rvMode==='quiz';
-  const info=`<div class="fixbox" style="margin-top:12px;text-align:left"><p><b>Meaning:</b> ${e(c.meaning)}</p>${c.extra?`<p style="margin-top:6px">${e(c.extra)}</p>`:''}${ex?`<p style="margin-top:8px">${hl(ex,word)}</p>`:''}</div>`;
+  const lv=rvLevel(c),task=c.cat==='Mistake'?'fix':!smart?'card':lv===1?'pick':lv===2?'recall':'use';
+  const big=t=>`<div style="font-size:28px;font-weight:800;margin-top:8px">${e(t)} ${sayBtn(t)}</div>`;
+  const info=`<div class="fixbox" style="margin-top:12px;text-align:left">${c.meaning?`<p><b>Meaning:</b> ${e(c.meaning)}</p>`:''}${c.extra?`<p style="margin-top:6px">${e(c.extra)}</p>`:''}${ex&&task!=='fix'?`<p style="margin-top:8px">${hl(ex,word)} ${sayBtn(ex)}</p>`:''}</div>`;
+  const res=rv.checked;
   let body;
-  if(quiz&&!rv.reveal){
+  if(task==='fix'){
+    body=rv.reveal
+      ?`<div class="mut">Wrong</div><div class="wrongtxt" style="font-size:18px;margin-top:4px">${e(c.wrong)}</div><div class="mut" style="margin-top:14px">Correct</div><div class="righttxt" style="font-size:22px">${e(word)} ${sayBtn(word)}</div>${c.meaning?`<div class="fixbox" style="margin-top:12px;text-align:left"><p><b>Why:</b> ${e(c.meaning)}</p></div>`:''}${micBlock(word)}`
+      :`<div class="mut">Fix this sentence</div><div class="wrongtxt" style="font-size:22px;margin-top:10px">${e(c.wrong)}</div><p class="mut" style="margin-top:10px">Saved by ${e(c.by||'')}</p>`;
+  } else if(task==='pick'&&!rv.reveal){
+    const canBlank=ex&&hasKw(ex,word),opts=rvOptions(c);
+    body=`<div class="mut">${canBlank?'Pick the missing word':(c.cat==='Grammar'?'Which grammar matches this rule?':'Which word means this?')}</div><div style="font-size:19px;margin:12px 0;line-height:1.5">${canBlank?blankIt(ex,word):e(c.meaning)}</div><div class="opts">${opts.map((o,i)=>`<button class="opt" data-a="rv_pick" data-v="${e(o)}"><b>${'ABC'[i]}</b><span>${e(o)}</span></button>`).join('')}</div><p class="mut keyhint">Tip: press A, B or C on your keyboard.</p>`;
+  } else if(task==='pick'){
+    const opts=rvOptions(c);
+    body=`<div class="${res&&res.ok?'msg':'warn'}">${res?(res.ok?'Correct!':'Not quite. The answer is "'+e(word)+'".'):'The answer is "'+e(word)+'".'}</div><div class="opts">${opts.map((o,i)=>{const right=o.toLowerCase()===word.toLowerCase(),picked=res&&String(res.typed).toLowerCase()===o.toLowerCase();return `<div class="opt ${right?'right':picked?'wrong':''}"><b>${'ABC'[i]}</b><span>${e(o)}</span></div>`}).join('')}</div>${info}${micBlock(ex||word)}`;
+  } else if(task==='recall'&&!rv.reveal){
     const canBlank=ex&&hasKw(ex,word);
-    const prompt=canBlank?blankIt(ex,word):e(c.meaning);
-    const opts=rvOptions(c);
-    body=`<div class="mut">${canBlank?'Pick the missing word':(c.cat==='Grammar'?'Which grammar matches this rule?':'Which word means this?')}</div><div style="font-size:19px;margin:12px 0;line-height:1.5">${prompt}</div><div class="opts">${opts.map((o,i)=>`<button class="opt" data-a="rv_pick" data-v="${e(o)}"><b>${'ABC'[i]}</b><span>${e(o)}</span></button>`).join('')}</div><p class="mut keyhint">Tip: press A, B or C on your keyboard.</p>`;
-  } else if(quiz){
-    const res=rv.checked;
-    const opts=rvOptions(c);
-    body=`<div class="${res&&res.ok?'msg':'warn'}">${res?(res.ok?'Correct!':'Not quite. The answer is "'+e(word)+'".'):'The answer is "'+e(word)+'".'}</div><div class="opts">${opts.map((o,i)=>{const right=o.toLowerCase()===word.toLowerCase(),picked=res&&String(res.typed).toLowerCase()===o.toLowerCase();return `<div class="opt ${right?'right':picked?'wrong':''}"><b>${'ABC'[i]}</b><span>${e(o)}</span></div>`}).join('')}</div>${info}`;
-  } else if(!rv.reveal){
-    body=`<div class="mut">Recall this</div><div style="font-size:28px;font-weight:800;margin-top:8px">${e(word)}</div>`;
+    body=`<div class="mut">${c.cat==='Grammar'?'Type the grammar name':'Type the missing word'}</div>${canBlank?`<div style="font-size:19px;margin:12px 0;line-height:1.5">${blankIt(ex,word)}</div>`:''}<p style="margin:8px 0"><b>Meaning:</b> ${e(c.meaning)}</p><input id="rvq" placeholder="Type it here, then press Enter" autocomplete="off" autocapitalize="off"><button class="pri" data-a="rv_check">Check</button>`;
+  } else if(task==='recall'){
+    body=`<div class="${res&&res.ok?'msg':'warn'}">${res?(res.ok?'Correct!':'Not quite'+(res.typed?': you wrote "'+e(res.typed)+'"':'')+'.'):'Here is the answer.'}</div>${big(word)}${info}${micBlock(ex||word)}`;
+  } else if(task==='use'&&!rv.reveal){
+    body=`<div class="mut">Write your own sentence with</div>${big(word)}<p class="mut" style="margin-top:6px">${e(c.meaning)}</p><textarea id="rvs" class="rvs" placeholder="Your sentence (any form of the word is fine)"></textarea><button class="pri" data-a="rv_use">Check my sentence</button>`;
+  } else if(task==='use'){
+    const fb=!res?'Here is an example.':res.ok?'Nice! Your sentence uses the word. Read it once more and check the grammar.':(!hasKw(res.typed,word)?'Your sentence needs to include "'+e(word)+'" (any form is fine).':'Make it a full sentence (at least 4 words).');
+    body=`<div class="${res&&res.ok?'msg':'warn'}">${fb}</div>${res&&res.typed?`<p style="font-size:18px;margin:10px 0">${hl(res.typed,word)} ${sayBtn(res.typed)}</p>`:''}${big(word)}${info}${micBlock(res&&res.ok?res.typed:(ex||word))}`;
   } else {
-    body=`<div class="mut">Recall this</div><div style="font-size:28px;font-weight:800;margin-top:8px">${e(word)}</div>${info}`;
+    body=`<div class="mut">Recall this</div>${big(word)}${rv.reveal?info+micBlock(ex||word):''}`;
   }
   let actions;
-  if(!rv.reveal)actions=quiz?'<button class="ghostbtn" data-a="rv_reveal" style="margin-top:12px">Show answer</button>':'<button class="pri" data-a="rv_reveal" style="margin-top:14px">Show meaning</button>';
-  else if(quiz&&rv.checked)actions=`<button class="pri" data-a="${rv.checked.ok?'rv_ok':'rv_no'}" style="margin-top:14px">Next card</button><p class="mut" style="text-align:center;margin:8px 0 0">${rv.checked.ok?'Counted as remembered.':'This word comes back tomorrow.'}</p>`;
+  if(!rv.reveal){
+    if(task==='fix')actions='<button class="pri" data-a="rv_reveal" style="margin-top:14px">Show the correct version</button>';
+    else if(task==='card')actions='<button class="pri" data-a="rv_reveal" style="margin-top:14px">Show meaning</button>';
+    else actions=`<button class="ghostbtn" data-a="rv_reveal" style="margin-top:12px">${task==='use'?'Skip, show me an example':'Show answer'}</button>`;
+  }
+  else if(res)actions=`<button class="pri" data-a="${res.ok?'rv_ok':'rv_no'}" style="margin-top:14px">Next card</button><p class="mut" style="text-align:center;margin:8px 0 0">${res.ok?(lv>=3?'Great, this word moves up.':'Counted as remembered.'):'This word comes back tomorrow.'}</p>`;
   else actions=`<div class="row2" style="margin-top:14px"><button class="pri" data-a="rv_ok">Remembered</button><button class="pri ghost" data-a="rv_no">Need practice</button></div><p class="mut" style="text-align:center;margin:8px 0 0">or swipe right / left</p>`;
-  const star=`<button class="ghostbtn" data-a="rv_fav" data-w="${e(word.toLowerCase())}">${isFav?'Saved':'Save word'}</button>`;
-  return head+`<div class="card" id="rvcard"><div class="row2" style="justify-content:space-between"><b>Card ${rv.i+1} of ${total}</b><span class="pill" style="background:${COL[c.cat]||'var(--soft)'}">${e(c.cat)}</span></div><div class="bar" style="margin:12px 0"><i style="width:${Math.round(rv.i/total*100)}%"></i></div><div style="text-align:center;padding:14px 6px">${body}</div>${actions}</div><div class="card row2" style="justify-content:space-between">${star}<small class="mut">Remembered ${rv.ok.length} · Need practice ${rv.no.length}</small><button class="ghostbtn" data-a="rv_new">New 20</button></div>`;
+  const star=task==='fix'?'<span></span>':`<button class="ghostbtn" data-a="rv_fav" data-w="${e(word.toLowerCase())}">${isFav?'Saved':'Save word'}</button>`;
+  const lvPill=lv&&smart?`<span class="lvpill">${LEVEL_NAME[lv]}</span>`:'';
+  return head+`<div class="card" id="rvcard"><div class="row2" style="justify-content:space-between"><b>Card ${rv.i+1} of ${total}</b><span class="row2" style="gap:6px">${lvPill}<span class="pill" style="background:${COL[c.cat]||'var(--soft)'}">${e(c.cat)}</span></span></div><div class="bar" style="margin:12px 0"><i style="width:${Math.round(rv.i/total*100)}%"></i></div><div style="text-align:center;padding:14px 6px">${body}</div>${actions}</div><div class="card row2" style="justify-content:space-between">${star}<small class="mut">Remembered ${rv.ok.length} · Need practice ${rv.no.length}</small><button class="ghostbtn" data-a="rv_new">New 20</button></div>`;
+}
+
+// ---------- Practice = Review + Weekly duel ----------
+function practiceScreen(){
+  const t=S.prTab==='duel'?'duel':'review';
+  const seg=`<div class="seg"><button class="${t==='review'?'on':''}" data-a="prtab" data-v="review">Review</button><button class="${t==='duel'?'on':''}" data-a="prtab" data-v="duel">Weekly duel${duelPending()?' •':''}</button></div>`;
+  return seg+(t==='duel'?duelScreen():reviewScreen());
+}
+
+// ---------- weekly duel ----------
+const partnerOf=u=>u==='bella'?'qaulan':'bella';
+function weekKey(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-n);return t.getUTCFullYear()+'-W'+String(isoWeek(d)).padStart(2,'0')}
+const duelRec=(wk,u)=>DUELS.find(x=>x.week===wk&&x.player===NAME[u]);
+const duelPending=()=>!duelRec(weekKey(TODAY),S.by);
+const fmtSec=n=>{n=Math.round(Number(n)||0);return n>=60?Math.floor(n/60)+'m '+(n%60)+'s':n+'s'};
+function duelWinner(a,b){if(!a||!b)return null;if(a.score!==b.score)return a.score>b.score?a:b;if(Number(a.seconds)!==Number(b.seconds))return Number(a.seconds)<Number(b.seconds)?a:b;return 'tie'}
+function duelOpts(c,pool){
+  const seen=new Set([c.word.toLowerCase()]);
+  const take=(list,n)=>{const out=[];for(const x of shuffle(list.slice())){if(out.length>=n)break;const k=String(x.word||'').toLowerCase();if(!k||seen.has(k))continue;seen.add(k);out.push(x.word)}return out};
+  let d=take(pool.filter(x=>x.cat===c.cat),2);
+  if(d.length<2)d=d.concat(take(BANK.filter(b=>b.c===c.cat).map(b=>({word:b.w})),2-d.length));
+  if(d.length<2)d=d.concat(take(pool,2-d.length));
+  return shuffle([c.word,...d]);
+}
+// 10 questions from your partner's words: this week's first, then older ones, then the Words Bank if needed
+function buildDuel(){
+  const mate=partnerOf(S.by);
+  const theirs=ENTRIES.filter(x=>x.u===mate&&REVIEW_CATS.includes(x.c)&&rvWordOf(x)).map(x=>({c:rvCard(x.id),d:x.d})).filter(x=>x.c);
+  const order=[...shuffle(theirs.filter(x=>x.d>=MON)),...shuffle(theirs.filter(x=>x.d<MON))].map(x=>x.c);
+  const seen=new Set(),picked=[];
+  order.forEach(c=>{const k=c.word.toLowerCase();if(picked.length<10&&!seen.has(k)){seen.add(k);picked.push(c)}});
+  let fromBank=0;
+  if(picked.length<10)shuffle(BANK.map((b,i)=>b&&b.w&&REVIEW_CATS.includes(b.c)?i:-1).filter(i=>i>=0)).forEach(i=>{if(picked.length>=10)return;const c=rvCard('b:'+i);const k=c.word.toLowerCase();if(!seen.has(k)){seen.add(k);picked.push(c);fromBank++}});
+  const pool=theirs.map(x=>x.c);
+  const qs=picked.map(c=>{const blank=c.ex&&hasKw(c.ex,c.word);return {word:c.word,cat:c.cat,ex:c.ex,meaning:c.meaning,
+    label:blank?'Pick the missing word':c.cat==='Grammar'?'Which grammar matches this rule?':'Which word means this?',
+    prompt:blank?blankIt(c.ex,c.word):e(c.meaning),opts:duelOpts(c,pool)}});
+  S.duel={qs:qs,i:0,score:0,picked:null,log:[],t0:Date.now(),done:false,fromBank:fromBank};
+}
+function finishDuel(){
+  const D=S.duel;D.done=true;D.seconds=Math.round((Date.now()-D.t0)/1000);
+  const rec={week:weekKey(TODAY),player:NAME[S.by],score:D.score,total:D.qs.length,seconds:D.seconds,date:TODAYS};
+  if(REMOTE){S.msg='Saving your score…';render();api(Object.assign({action:'saveDuel'},rec)).then(r=>{S.msg=r.error||'Score saved. '+NAME[partnerOf(S.by)]+' gets a notification.';render()});return true}
+  DUELS.push(rec);S.msg='Score saved.';return false;
+}
+function duelScreen(){
+  const wk=weekKey(TODAY),me=S.by,mate=partnerOf(me),D=S.duel;
+  if(D&&!D.done&&D.qs.length){
+    const q=D.qs[D.i],ans=D.picked;
+    const opts=q.opts.map((o,i)=>{
+      if(ans===null)return `<button class="opt" data-a="duelPick" data-v="${e(o)}"><b>${'ABC'[i]}</b><span>${e(o)}</span></button>`;
+      const right=o.toLowerCase()===q.word.toLowerCase(),picked=ans.toLowerCase()===o.toLowerCase();
+      return `<div class="opt ${right?'right':picked?'wrong':''}"><b>${'ABC'[i]}</b><span>${e(o)}</span></div>`}).join('');
+    const after=ans===null?'<p class="mut keyhint">Tip: press A, B or C on your keyboard. The clock is running!</p>'
+      :`${q.ex?`<p style="margin-top:12px">${hl(q.ex,q.word)} ${sayBtn(q.ex)}</p>`:''}<button class="pri" data-a="duelNext" style="margin-top:14px">${D.i+1<D.qs.length?'Next question':'See my score'}</button>`;
+    return `<div class="card"><div class="row2" style="justify-content:space-between"><b>Question ${D.i+1} of ${D.qs.length}</b><span class="row2" style="gap:6px"><span class="lvpill">Score ${D.score}</span><span class="pill" style="background:${COL[q.cat]||'var(--soft)'}">${e(q.cat)}</span></span></div><div class="bar" style="margin:12px 0"><i style="width:${Math.round(D.i/D.qs.length*100)}%"></i></div><div style="text-align:center;padding:10px 6px"><div class="mut">${q.label}</div><div style="font-size:19px;margin:12px 0;line-height:1.5">${q.prompt}</div><div class="opts">${opts}</div>${after}</div></div>`;
+  }
+  const mine=duelRec(wk,me),theirs=duelRec(wk,mate),w=duelWinner(mine,theirs);
+  const verdict=!mine?'':!theirs?`Waiting for ${NAME[mate]} to play.`:w==='tie'?"It's a tie! 🤝":w===mine?'You win this week! 🏆':`${NAME[mate]} wins this week. Next week is yours!`;
+  const box=u=>{const r=duelRec(wk,u);return `<div class="mbox ${w&&w!=='tie'&&r===w?'win':''}"><small>${NAME[u]}</small><b>${r?r.score+'/'+r.total:'–'}</b><small>${r?fmtSec(r.seconds):'Not played yet'}</small></div>`};
+  const theirN=ENTRIES.filter(x=>x.u===mate&&REVIEW_CATS.includes(x.c)).length;
+  const main=`<div class="card"><h3>Weekly duel · Week ${isoWeek(TODAY)}</h3><p class="mut">10 questions built from ${NAME[mate]}'s words. Higher score wins; if it's a tie, the faster one wins. One try per week, a new duel starts every Monday.</p><div class="duelgrid">${box(me)}${box(mate)}</div>${verdict?`<div class="msg" style="text-align:center">${verdict}</div>`:''}${!mine?`<button class="pri" data-a="duelStart">Start the duel</button>${theirN<10?`<p class="mut" style="margin-top:8px">${NAME[mate]} has ${theirN} word${theirN===1?'':'s'} so far, so the rest come from the Words Bank.</p>`:''}`:''}</div>`;
+  const review=D&&D.done?`<div class="card"><h3>Your answers</h3>${D.log.map(x=>`<div class="sres"><span>${x.ok?'✅':'❌'}</span><div><b>${e(x.word)}</b>${x.ok?'':` <small class="mut">· you picked “${e(x.picked)}”</small>`}</div></div>`).join('')}</div>`:'';
+  return main+review+duelHistory();
+}
+function duelHistory(){
+  const weeks=[...new Set(DUELS.map(x=>x.week))].sort().reverse();
+  if(!weeks.length)return '';
+  const wins={bella:0,qaulan:0};
+  const rows=weeks.map(wk=>{const b=duelRec(wk,'bella'),q=duelRec(wk,'qaulan'),w=duelWinner(b,q);
+    if(w&&w!=='tie')wins[w===b?'bella':'qaulan']++;
+    return `<span>${e(wk.replace(/^\d{4}-W0?/,'Week '))}</span><span>${b?b.score+'/'+b.total:'–'}</span><span>${q?q.score+'/'+q.total:'–'}</span><span>${!w?'…':w==='tie'?'Tie':w===b?'🏆 Bella':'🏆 Qaulan'}</span>`}).join('');
+  return `<div class="card"><div class="row2" style="justify-content:space-between"><h3>Duel history</h3><b>Bella ${wins.bella} · Qaulan ${wins.qaulan}</b></div><div class="hist"><span class="h">Week</span><span class="h">Bella</span><span class="h">Qaulan</span><span class="h">Winner</span>${rows}</div></div>`;
+}
+
+// ---------- Library search (all categories) ----------
+function librarySearch(){
+  const q=String(S.lq||'').trim().toLowerCase();
+  const box=`<div class="card"><h3>Search everything</h3><div class="row2" style="gap:8px;flex-wrap:nowrap"><input id="lq" value="${e(S.lq||'')}" placeholder="Search words, meanings and examples (press Enter)">${q?'<button class="ghostbtn" data-a="lqclear">Clear</button>':''}</div></div>`;
+  if(!q)return box;
+  const hits=ENTRIES.filter(x=>Object.values(x.v||{}).some(v=>typeof v==='string'&&v.toLowerCase().includes(q)));
+  const mis=MISTAKES.filter(m=>(m.wrong+' '+m.right+' '+m.why).toLowerCase().includes(q));
+  const list=hits.slice(0,60).map(x=>{const w=x.v.word||x.v.title||'(Analyze Data)';return `<div class="item" data-a="logcat" data-v="${e(x.c)}"><span><b>${hl(w,q)}</b> <small class="mut">${e(x.c)} · ${e(NAME[x.u]||'')} · ${fmtDate(x.d)}</small></span><small>${e(x.v.meaning||x.v.rules||x.v.review||'')}</small></div>`}).join('')
+    +mis.map(m=>`<div class="item mistake"><span><span class="wrongtxt">${e(m.wrong)}</span> → <b>${e(m.right)}</b> <small class="mut">Mistake · ${e(m.by)}</small></span></div>`).join('');
+  return box+`<div class="card"><h3>${hits.length+mis.length} result${hits.length+mis.length===1?'':'s'} for “${e(S.lq)}”</h3>${list||'<p class="mut">Nothing found.</p>'}${hits.length>60?'<p class="mut">Showing the first 60.</p>':''}</div>`;
+}
+
+// ---------- mistakes log (Input → Mistakes) ----------
+function mistakesTab(){
+  const f=S.mf||{};
+  const form=`<div class="card"><h3>Add a mistake</h3><p class="mut">Write the sentence the way it was said wrong, then the correct version. Practising your own mistakes is one of the fastest ways to improve.</p><label>Wrong</label><input id="mw" data-mf="mw" value="${e(f.mw||'')}" placeholder="e.g. I am agree with you"><label>Correct</label><input id="mr" data-mf="mr" value="${e(f.mr||'')}" placeholder="e.g. I agree with you"><label>Why (optional)</label><input id="my" data-mf="my" value="${e(f.my||'')}" placeholder="e.g. agree is a verb, so no am"><button class="pri" data-a="addMistake">Save mistake</button></div>`;
+  const list=MISTAKES.slice().reverse().map(m=>`<div class="item mistake"><div style="flex:1;min-width:0"><div class="wrongtxt">${e(m.wrong)}</div><div class="righttxt">${e(m.right)} ${sayBtn(m.right)}</div>${m.why?`<small class="mut">${e(m.why)}</small>`:''}<small class="mut" style="display:block;margin-top:2px">${e(m.by)} · ${fmtDate(m.date)}</small></div>${m.by===NAME[S.by]?`<button class="ghostbtn" data-a="delMistake" data-id="${m.row}">Delete</button>`:''}</div>`).join('');
+  return form+`<div class="card"><div class="row2" style="justify-content:space-between"><h3>Our mistakes (${MISTAKES.length})</h3>${MISTAKES.length?'<button class="ghostbtn" data-a="practiceMistakes">Practise them</button>':''}</div>${list||'<p class="mut">No mistakes saved yet.</p>'}</div>`;
+}
+
+// ---------- word mastery (Dashboard) ----------
+function masteryCard(){
+  const srs=srsGet(),n={0:0,1:0,2:0,3:0,4:0};
+  const words=[...new Set(ENTRIES.filter(x=>REVIEW_CATS.includes(x.c)).map(rvWordOf).filter(Boolean).map(w=>w.toLowerCase()))];
+  words.forEach(w=>{const r=srs[w];if(!r){n[0]++;return}const b=r.box;n[b<=1?1:b<=3?2:b===4?3:4]++});
+  const box=(l,v)=>`<div class="mbox"><b>${v}</b><small>${l}</small></div>`;
+  return `<div class="card"><div class="row2" style="justify-content:space-between"><h3>Word mastery · ${e(NAME[S.by]||'')}</h3><small class="mut">${words.length} words</small></div><div class="mgrid">${box('Not started',n[0])}${box('Recognise',n[1])}${box('Recall',n[2])}${box('Use it',n[3])}${box('Mastered',n[4])}</div><div class="bar" style="margin-top:12px"><i style="width:${pct(n[4],words.length)}%"></i></div><p class="mut" style="margin-top:8px">${pct(n[4],words.length)}% mastered. Words move up a level each time you remember them in Smart practice.</p></div>`;
 }
 
 // ---------- streak, weekly summary, export ----------
@@ -860,6 +1061,15 @@ function weekStats(){
 function weekCard(){
   const w=weekStats();
   return `<div class="card"><h3>This week</h3><div class="grid4"><div class="stat"><div class="mut">Entries</div><div class="big">${w.entries}</div></div><div class="stat"><div class="mut">Answers given</div><div class="big">${w.answers}</div></div><div class="stat"><div class="mut">Words remembered</div><div class="big">${w.remembered}</div></div><div class="stat"><div class="mut">Behind most</div><div class="big" style="font-size:15px">${w.worst?e(w.worst.c)+' · '+w.worst.p+'%':'—'}</div></div></div></div>`;
+}
+function practiceCard(){
+  if(S.mode==='combined'&&!REMOTE)return '';
+  const srs=srsGet();
+  const words=[...new Set(ENTRIES.filter(x=>REVIEW_CATS.includes(x.c)).map(rvWordOf).filter(Boolean).map(w=>w.toLowerCase()))];
+  const due=words.filter(w=>srs[w]&&srs[w].due<=TODAYS).length,fresh=words.filter(w=>!srs[w]).length;
+  const wk=weekKey(TODAY),mine=duelRec(wk,S.by),theirs=duelRec(wk,partnerOf(S.by)),w=duelWinner(mine,theirs);
+  const duelTxt=!mine?(theirs?`${NAME[partnerOf(S.by)]} already played (${theirs.score}/${theirs.total}). Your turn!`:'Not played yet this week.'):!theirs?`You scored ${mine.score}/${mine.total}. Waiting for ${NAME[partnerOf(S.by)]}.`:w==='tie'?"This week's duel is a tie.":w===mine?'You won this week! 🏆':`${NAME[partnerOf(S.by)]} won this week.`;
+  return `<div class="card"><h3>Practice</h3><div class="item" style="cursor:default"><span><b>${due} due for review</b> <small class="mut">· ${fresh} new</small></span><button class="pri ghost" style="width:auto;margin:0;padding:6px 12px" data-a="goreview">Practise</button></div><div class="item" style="cursor:default;border-bottom:0"><span><b>Weekly duel</b> <small class="mut">· ${duelTxt}</small></span>${!mine?'<button class="pri ghost" style="width:auto;margin:0;padding:6px 12px" data-a="goduel">Play</button>':''}</div></div>`;
 }
 function homeExtras(){
   const us=users();
@@ -970,10 +1180,10 @@ function render(){
   if(!S.started){$('#app').innerHTML=welcomeScreen();$('#date').textContent='';if(S.signing)initGsi();return;}
   $('#acct').innerHTML=acctChip();
   const waitN=REMOTE?REMOTE.waiting.length:0;
-  $('#tabs').innerHTML=[['home','Home','home'],['input','Input','input'],['review','Review','review'],['dash','Dashboard','dash'],['log','Log','log'],['settings','Settings','settings']].map(([v,l,ic])=>`<button class="${S.screen===v?'on':''}" data-a="screen" data-v="${v}">${svgIcon(ic)}<span>${l}</span>${v==='input'&&waitN?'<i class="adot"></i>':''}</button>`).join('');
+  $('#tabs').innerHTML=[['home','Today','home'],['input','Add','input'],['review','Practice','review'],['log','Library','log'],['dash','Progress','dash']].map(([v,l,ic])=>`<button class="${S.screen===v?'on':''}" data-a="screen" data-v="${v}">${svgIcon(ic)}<span>${l}</span>${v==='input'&&waitN?'<i class="adot"></i>':''}</button>`).join('');
   const unread=unreadNotes().length;const bd=$('#badge');bd.textContent=unread>99?'99+':unread;bd.style.display=unread?'block':'none';
-  $('#bell').classList.toggle('on',S.screen==='notes');
-  $('#app').innerHTML={home,input,review:reviewScreen,dash,log,notes:notesScreen,settings:settingsScreen}[S.screen]();
+  $('#bell').classList.toggle('on',S.screen==='notes');$('#gear').classList.toggle('on',S.screen==='settings');
+  $('#app').innerHTML={home,input,review:practiceScreen,dash,log,notes:notesScreen,settings:settingsScreen}[S.screen]();
   $('#modal').innerHTML=S.askNav?askHtml():'';
   $('#date').textContent=TODAY.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
   showToast();
@@ -983,6 +1193,8 @@ function render(){
 document.addEventListener('click',ev=>{
   const t=ev.target.closest('[data-a]');if(!t)return;
   const a=t.dataset.a,v=t.dataset.v,id=Number(t.dataset.id);
+  if(a==='say'){sayIt(t.dataset.t);return}
+  if(a==='mic'){listenTo(t.dataset.t);return}
   // Warn before throwing away text typed in the Input form
   const leaving=(a==='todo'&&v!==S.cat)||(a==='cat'&&v!==S.cat)||['late','src','switch','backtoday'].includes(a);
   if(leaving&&S.screen==='input'&&Object.values(S.f||{}).some(x=>String(x||'').trim())&&!confirm('You have text that is not submitted yet. Leave and lose it?'))return;
@@ -1007,8 +1219,26 @@ document.addEventListener('click',ev=>{
   else if(a==='rv_src'){S.rvSrc=v;S.rvCat='All';S.rvTopic='All';startReview();}
   else if(a==='rv_cat'){S.rvCat=v;S.rvTopic='All';startReview();}
   else if(a==='rv_favonly'){S.rvFav=!S.rvFav;startReview();}
-  else if(a==='rv_mode'){S.rvMode=v;if(S.rv){S.rv.reveal=false;S.rv.checked=null}}
-  else if(a==='rv_reveal'){S.rv.reveal=true;S.rv.checked=null;}
+  else if(a==='rv_mode'){S.rvMode=v;S.heard=null;if(S.rv){S.rv.reveal=false;S.rv.checked=null}}
+  else if(a==='rv_reveal'){S.rv.reveal=true;S.rv.checked=null;S.heard=null;}
+  else if(a==='accent'){localStorage.setItem('qnb_accent',v);sayIt(v==='en-GB'?'Hello, this is the British voice.':'Hello, this is the American voice.');}
+  else if(a==='rv_use'){const c=rvCard(S.rv.cards[S.rv.i]);const txt=((document.getElementById('rvs')||{}).value||'').trim();
+    if(!txt){S.msg='Write a sentence first.';}else if(c){S.rv.checked={ok:hasKw(txt,c.word)&&txt.split(/\s+/).length>=4,typed:txt};S.rv.reveal=true;}}
+  else if(a==='addMistake'){const m=S.mf||{},w=(m.mw||'').trim(),r=(m.mr||'').trim(),y=(m.my||'').trim();
+    if(!w||!r){S.msg='Fill in both the wrong and the correct sentence.';}
+    else if(REMOTE){S.msg='Saving…';render();api({action:'addMistake',wrong:w,right:r,why:y}).then(res=>{if(!res.error)S.mf={};S.msg=res.error||'Mistake saved.';render()});return;}
+    else{MISTAKES.push({row:Date.now(),date:TODAYS,by:NAME[S.by],wrong:w,right:r,why:y});S.mf={};S.msg='Mistake saved.';}}
+  else if(a==='delMistake'){if(!confirm('Delete this mistake?'))return;
+    if(REMOTE){S.msg='Deleting…';render();api({action:'deleteMistake',row:id}).then(r=>{S.msg=r.error||'Mistake deleted.';render()});return;}
+    const i=MISTAKES.findIndex(m=>m.row===id);if(i>=0)MISTAKES.splice(i,1);}
+  else if(a==='prtab'){S.prTab=v;S.msg='';}
+  else if(a==='goreview'){S.screen='review';S.prTab='review';}
+  else if(a==='goduel'){S.screen='review';S.prTab='duel';}
+  else if(a==='duelStart'){if(duelRec(weekKey(TODAY),S.by)){S.msg="You already played this week's duel.";}else buildDuel();}
+  else if(a==='duelPick'){const D=S.duel;if(D&&D.picked===null){const q=D.qs[D.i],ok=String(v).toLowerCase()===q.word.toLowerCase();D.picked=String(v);if(ok)D.score++;D.log.push({word:q.word,ok:ok,picked:String(v)});}}
+  else if(a==='duelNext'){const D=S.duel;if(D){D.i++;D.picked=null;if(D.i>=D.qs.length&&finishDuel())return;}}
+  else if(a==='lqclear'){S.lq='';}
+  else if(a==='practiceMistakes'){S.prTab='review';S.screen='review';S.rvSrc='mistakes';S.rvCat='All';startReview();}
   else if(a==='rv_pick'){const c=rvCard(S.rv.cards[S.rv.i]);if(c){S.rv.checked={ok:String(v).toLowerCase()===c.word.toLowerCase(),typed:v};S.rv.reveal=true;}}
   else if(a==='rv_check'){const c=rvCard(S.rv.cards[S.rv.i]);const typed=(document.getElementById('rvq')||{value:''}).value;if(c){S.rv.checked={ok:quizOk(typed,c.word),typed:typed.trim()};S.rv.reveal=true;}}
   else if(a==='rv_ok'||a==='rv_no'){rvAnswer(a==='rv_ok')}
@@ -1029,7 +1259,7 @@ document.addEventListener('click',ev=>{
   else if(a==='intab'){S.inTab=v;S.msg='';}
   else if(a==='backtoday'){S.lateDay=null;S.f={};S.gen=null;}
   else if(a==='day'){S.day=v;S.f={};S.gen=null;}
-  else if(a==='logcat'){S.logCat=v;S.fullTbl=false;}
+  else if(a==='logcat'){S.logCat=v;S.lq='';S.fullTbl=false;}
   else if(a==='startEdit'){S.editId=id;}
   else if(a==='cancelEdit'){S.editId=null;}
   else if(a==='editAns'){S.editAns=id+'|'+t.dataset.k;S.editId=null;}
@@ -1057,9 +1287,12 @@ document.addEventListener('change',ev=>{
     if(REMOTE){S.msg='Uploading picture…';render();shrinkImage(f).then(data=>apiPost({action:'picture',name:f.name.replace(/\.[^.]+$/,'')+'.jpg',mime:'image/jpeg',data:data})).then(r=>{S.msg=r.error||'Picture uploaded. Both of you see the same one.';render()}).catch(err=>{S.msg=err.message;render()});return;}
     const rd=new FileReader();rd.onload=()=>{promptRow().v.pic={src:rd.result,name:f.name};S.msg='Picture uploaded. Both of you see the same one.';render();};rd.readAsDataURL(f);}
 });
+document.addEventListener('input',ev=>{const k=ev.target.dataset&&ev.target.dataset.mf;if(k){S.mf=S.mf||{};S.mf[k]=ev.target.value}});
 document.addEventListener('keydown',ev=>{
+  if(ev.target.id==='rvq'&&ev.key==='Enter'){ev.preventDefault();const b=document.querySelector('[data-a=rv_check]');if(b)b.click();return}
   if(ev.target.id==='bq'&&ev.key==='Enter'){S.bq=ev.target.value;render();return}
-  if(S.screen==='review'&&S.rvMode==='quiz'&&S.rv&&!S.rv.reveal&&!/INPUT|TEXTAREA|SELECT/.test(ev.target.tagName)){
+  if(ev.target.id==='lq'&&ev.key==='Enter'){S.lq=ev.target.value;render();const el=document.getElementById('lq');if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length)}return}
+  if(S.screen==='review'&&(S.prTab==='duel'?(S.duel&&!S.duel.done&&S.duel.picked===null):(S.rvMode!=='word'&&S.rv&&!S.rv.reveal))&&!/INPUT|TEXTAREA|SELECT/.test(ev.target.tagName)){
     const i={a:0,b:1,c:2,'1':0,'2':1,'3':2}[String(ev.key).toLowerCase()];
     const btn=i===undefined?null:document.querySelectorAll('button.opt')[i];
     if(btn){ev.preventDefault();btn.click()}
