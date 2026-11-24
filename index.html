@@ -188,6 +188,20 @@ body.dark{--bg:linear-gradient(160deg,#1c1822,#15121a 60%);--card:#241f2b;--ink:
 @media(max-width:760px){.tabs{transition:transform .25s ease}.tabs.hide{transform:translateY(150%)}}
 
 .rvsel{width:100%;max-width:360px;margin:4px 0 6px;padding:9px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--ink);font:600 13px Poppins,system-ui,sans-serif}
+.opts{display:grid;gap:10px;margin-top:16px;text-align:left}
+.opt{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);font:600 15px Poppins,system-ui,sans-serif;text-align:left}
+button.opt{cursor:pointer}
+button.opt:hover,button.opt:focus-visible{border-color:var(--a);background:var(--soft);outline:none}
+.opt b{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--soft);color:var(--ink);flex:none;font-size:13px}
+.opt.right{border-color:#43a86b;background:#e3f5ea;color:#14532d}
+.opt.right b{background:#43a86b;color:#fff}
+.opt.wrong{border-color:#ff8fa3;background:#ffe3e8;color:#7a1328}
+.opt.wrong b{background:#ff5a7a;color:#fff}
+.keyhint{font-size:12px;margin-top:10px}
+.loading{display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:20px}
+.spin{width:34px;height:34px;border-radius:50%;border:4px solid var(--soft);border-top-color:var(--a);animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.spin{animation-duration:3s}}
 /* ---- sidebar cleanup (desktop) ---- */
 .tabs button{position:relative}
 @media(min-width:761px){
@@ -242,8 +256,12 @@ const SCHED={Monday:['Idiom','Analyze Data','Vocabulary','Grammar'],Tuesday:['Sl
 const TGT={Idiom:5,'Analyze Data':1,Vocabulary:5,Movie:1,Slang:5,'Phrasal Verb':5,Grammar:5,Expression:5};
 // Answer goals as currently typed in DASHBOARD (weekly)
 const ANS_W={Idiom:15,'Analyze Data':2,Vocabulary:70,Movie:0,Slang:15,'Phrasal Verb':15,Grammar:10,Expression:5};
-const DEF_SCHED=JSON.parse(JSON.stringify(SCHED)),DEF_TGT=JSON.parse(JSON.stringify(TGT));
+const DEF_SCHED=JSON.parse(JSON.stringify(SCHED)),DEF_TGT=JSON.parse(JSON.stringify(TGT)),DEF_ANS=JSON.parse(JSON.stringify(ANS_W));
 const DAYS_OF=c=>Object.values(SCHED).filter(a=>a.includes(c)).length;
+// Days from Monday up to today (Mon=1 ... Sun=7), and how many of those days have category c
+const DAYS_GONE=((new Date().getDay()+6)%7)+1;
+const DAYS_SO_FAR=c=>['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].slice(0,DAYS_GONE).filter(d=>(SCHED[d]||[]).includes(c)).length;
+function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-n);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/86400000+1)/7)}
 
 // Column layout of each category tab (headers copied from the sheet)
 const DB=[['date','Submitted Date','auto'],['by','Submitted by','auto']];
@@ -317,9 +335,9 @@ function chartSVG(p){
 }
 function analyzeView(){
   const row=promptRow(),p=row.v.pic,by=S.by,k=ownKey('Analyze Data',by),other=by==='bella'?'qaulan':'bella';
-  const picBlock=p?`<img src="${p.src}" alt="Today's picture" style="width:100%;border-radius:14px;border:1px solid var(--line)"><p class="mut">Shared picture for both of you. ${e(p.name||'')}</p><label>Replace picture</label><input id="picfile" type="file" accept="image/*">`:`<p class="mut">Upload today's IELTS Task 1 picture. Both of you will see the same one.</p><label>Upload picture</label><input id="picfile" type="file" accept="image/*">`;
+  const picBlock=p?`<img src="${e(p.src)}" alt="Today's picture" style="width:100%;border-radius:14px;border:1px solid var(--line)"><p class="mut">Shared picture for both of you. ${e(p.name||'')}</p><label>Replace picture</label><input id="picfile" type="file" accept="image/*">`:`<p class="mut">Upload today's IELTS Task 1 picture. Both of you will see the same one.</p><label>Upload picture</label><input id="picfile" type="file" accept="image/*">`;
   const msg=S.msg?`<div class="msg">${e(S.msg)}</div>`:'';
-  const who=S.mode==='combined'?`<div class="seg">${U.map(u=>`<button class="${by===u?'on':''}" data-a="by" data-v="${u}">${NAME[u]}</button>`).join('')}</div>`:'';
+  const who=S.mode==='combined'&&!REMOTE?`<div class="seg">${U.map(u=>`<button class="${by===u?'on':''}" data-a="by" data-v="${u}">${NAME[u]}</button>`).join('')}</div>`:'';
   const days=`<div class="chips">${WD.map(d=>`<button class="${(S.day||TODAYNAME)===d?'on':''}" data-a="day" data-v="${d}">${d.slice(0,3)}</button>`).join('')}</div>`;
   const todo=todayList().map(c=>{const dn=subsN(by,c,'day');return `<button class="todo ${S.cat===c?'on':''}" data-a="todo" data-v="${c}" style="--c:${COL[c]}"><span class="radio"></span><span>${c}</span><span class="tg">${dn}/${TGT[c]}</span><span class="bar" style="grid-column:1/-1"><i style="width:${pct(dn,TGT[c])}%"></i></span></button>`}).join('');
   const otherDone=row.v[ownKey('Analyze Data',other)]?'submitted ':'waiting';
@@ -336,9 +354,9 @@ function home(){
   const us=users(),cats=todayList();
   const got=us.reduce((a,u)=>a+cats.reduce((b,c)=>b+Math.min(TGT[c],subsN(u,c,'day')),0),0);
   const goal=us.length*cats.reduce((a,c)=>a+TGT[c],0);
-  const w=waitingFor(S.mode==='combined'?S.by:S.mode);
+  const w=REMOTE?REMOTE.waiting:waitingFor(S.mode==='combined'?S.by:S.mode).filter(x=>x.u!=='prompt');
   const tiles=cats.map(c=>{const d=us.reduce((a,u)=>a+subsN(u,c,'day'),0),g=TGT[c]*us.length;return `<div class="stat" style="border-left:6px solid ${COL[c]}"><div class="mut">${c}</div><div class="big">${d}<small class="mut">/${g}</small></div>${bar(pct(d,g))}</div>`}).join('');
-  const list=w.slice(0,6).map(x=>`<div class="item"><span><b>${e(x.v[CATS[x.c].f[2][0]]||'')}</b> <small class="mut">${x.c} · ${NAME[x.u]||'Daily prompt'} · ${fmtDate(x.d)}</small></span><button class="pri ghost" style="width:auto;margin:0;padding:6px 12px" data-a="cat" data-v="${x.c}">Answer</button></div>`).join('')||'<p class="mut">Nothing waiting for you. </p>';
+  const list=w.slice(0,6).map(x=>{const word=REMOTE?x.word:(x.v.word||x.v.title||''),cat=REMOTE?x.cat:x.c,who=REMOTE?x.by:(NAME[x.u]||''),d=REMOTE?x.date:x.d;return `<div class="item"><span><b>${e(word)}</b> <small class="mut">${e(cat)} · ${e(who)} · ${fmtDate(d)}</small></span><button class="pri ghost" style="width:auto;margin:0;padding:6px 12px" data-a="goanswer">Answer</button></div>`}).join('')||'<p class="mut">Nothing waiting for you. </p>';
   return homeExtras()+`<div class="card row2">${donut(pct(got,goal),'var(--a)')}<div><h2 style="margin:0 0 4px;font-size:22px">${S.mode==='combined'?'Team today':'Hi '+NAME[S.mode]+' '}</h2><div class="mut">Today is ${TODAYNAME}. Your to-do: ${cats.join(', ')}</div></div></div>
   <div class="card"><h3>Today's to-do</h3><div class="grid4">${tiles}</div></div>
   <div class="card"><h3>Waiting for your answer (${w.length})</h3>${list}</div>`;
@@ -349,7 +367,6 @@ function lateItems(u){
   const out=[];
   for(let i=1;i<=6;i++){
     const dt=new Date(TODAY);dt.setDate(dt.getDate()-i);const dstr=ds(dt);
-    if(dstr<MON)break;
     const day=DNAME[dt.getDay()];
     (SCHED[day]||[]).forEach(c=>{
       if(c==='Analyze Data')return;
@@ -363,11 +380,11 @@ function lateItems(u){
 function lateCard(){
   const items=lateItems(S.by);
   const banner=S.lateDay?`<div class="msg">Filling a late target for ${e(S.lateDay)}. It counts toward that day and the week. <button class="ghostbtn" data-a="backtoday" style="margin:0 0 0 8px">Back to today</button></div>`:'';
-  const rows=items.map(i=>`<div class="item" data-a="late" data-c="${e(i.c)}" data-d="${i.d}"><span><b>${e(i.c)}</b> <small class="mut">${i.day} · ${i.short} left</small></span><span class="ghostbtn">Fill late</span></div>`).join('')||'<p class="mut">No late targets this week.</p>';
-  return `<div class="card"><h3>Catch-up list · this week</h3>${banner}${rows}</div>`;
+  const rows=items.map(i=>`<div class="item" data-a="late" data-c="${e(i.c)}" data-d="${i.d}"><span><b>${e(i.c)}</b> <small class="mut">${i.day} · ${i.short} left</small></span><span class="ghostbtn">Fill late</span></div>`).join('')||'<p class="mut">No late targets in the last 7 days.</p>';
+  return `<div class="card"><h3>Catch-up list · last 7 days</h3>${banner}${rows}</div>`;
 }
 function subtabs(){
-  const n=waitingFor(S.by).filter(x=>x.u!=='prompt').length;
+  const n=REMOTE?REMOTE.waiting.length:waitingFor(S.by).filter(x=>x.u!=='prompt').length;
   return `<div class="seg">${[['today','Today'],['catch','Catch up'],['answer',`Answer (${n})`]].map(([v,l])=>`<button class="${S.inTab===v?'on':''}" data-a="intab" data-v="${v}">${l}</button>`).join('')}</div>`;
 }
 function answerList(){
@@ -390,7 +407,7 @@ function inputToday(){
   if(S.cat==='Analyze Data')return analyzeView();
   const C=CATS[S.cat],by=S.by;
   const todo=todayList().map(c=>{const dn=subsN(by,c,'day');return `<button class="todo ${S.cat===c?'on':''}" data-a="todo" data-v="${c}" style="--c:${COL[c]}"><span class="radio"></span><span>${c}</span><span class="tg">${dn}/${TGT[c]}</span><span class="bar" style="grid-column:1/-1"><i style="width:${pct(dn,TGT[c])}%"></i></span></button>`}).join('');
-  const who=S.mode==='combined'?`<label>Submitted by</label><div class="seg">${U.map(u=>`<button class="${by===u?'on':''}" data-a="by" data-v="${u}">${NAME[u]}</button>`).join('')}</div>`:'';
+  const who=S.mode==='combined'&&!REMOTE?`<label>Submitted by</label><div class="seg">${U.map(u=>`<button class="${by===u?'on':''}" data-a="by" data-v="${u}">${NAME[u]}</button>`).join('')}</div>`:'';
   const bankCtl=(C.bank.length&&S.src==='bank')?`<input id="bq" value="${e(S.bq||'')}" placeholder="Search Words Bank (press Enter)"><select id="bt"><option>All</option>${[...new Set(BANK.filter(b=>C.bank.includes(b.c)).map(b=>b.t))].map(t=>`<option ${S.bt===t?'selected':''}>${e(t)}</option>`).join('')}</select></div>`:'';
   const curT=(S.src==='bank'&&S.f[C.gsrc])?(BANK.find(b=>b.w===String(S.f[C.gsrc]).toLowerCase())||{}).t:null;
   const sameTopic=curT?`<p class="mut">Same topic: ${e(curT)}</p><div class="chips">${BANK.filter(b=>b.t===curT&&C.bank.includes(b.c)&&b.w!==String(S.f[C.gsrc]).toLowerCase()).slice(0,6).map(b=>`<button data-a="pick" data-v="${e(b.w)}">${e(b.w)}</button>`).join('')}</div>`:'';
@@ -515,7 +532,7 @@ function dash(){
   const who=`<div class="seg">${['bella','qaulan','combined'].map(m=>`<button class="${dv===m?'on':''}" data-a="dv" data-v="${m}">${MODE_LABEL[m]}</button>`).join('')}</div>`;
   const seg=`<div class="seg"><button class="${daily?'on':''}" data-a="dash" data-v="daily">Daily</button><button class="${!daily?'on':''}" data-a="dash" data-v="weekly">Weekly</button></div>`;
   const vw=`<div class="seg"><button class="${S.dview!=='chart'?'on':''}" data-a="dview" data-v="table">Table</button><button class="${S.dview==='chart'?'on':''}" data-a="dview" data-v="chart">Chart</button></div>`;
-  const D=cats.map(c=>({c,sg:us.length*(daily?TGT[c]:DAYS_OF(c)*TGT[c]),sr:us.reduce((a,u)=>a+subsN(u,c,r),0),ag:us.length*(ANS_W[c]===0?0:daily?TGT[c]:ANS_W[c]),ar:us.reduce((a,u)=>a+ansN(u,c,r),0),tr:LAST7.map(d=>ENTRIES.filter(x=>us.includes(x.u)&&x.c===c&&x.d===d).length)}));
+  const D=cats.map(c=>({c,sg:us.length*(daily?TGT[c]:DAYS_SO_FAR(c)*TGT[c]),sr:us.reduce((a,u)=>a+subsN(u,c,r),0),ag:us.length*(!ANS_W[c]?0:daily?TGT[c]:Math.round(ANS_W[c]*DAYS_GONE/7)),ar:us.reduce((a,u)=>a+ansN(u,c,r),0),tr:LAST7.map(d=>ENTRIES.filter(x=>us.includes(x.u)&&x.c===c&&x.d===d).length)}));
   const pcs=D.map(x=>pct(x.sr+x.ar,x.sg+x.ag));
   const avg=pcs.length?Math.round(pcs.reduce((a,b)=>a+b,0)/pcs.length):0;
   let body;
@@ -528,13 +545,13 @@ function dash(){
     const fullT=`<div class="card tw"><table><tr><th>Category</th><th>Goal</th><th>Reality</th><th>% Goal</th><th>Answer goal</th><th>Answer reality</th><th>% Answer</th><th>% All</th><th>Last 7 days</th></tr>${rows}</table></div>`;
     body=isMobile()&&!S.fullTbl?`${cardsM}<button class="pri ghost" data-a="fulltbl">See full table</button>`:(isMobile()?fullT+`<button class="pri ghost" data-a="fulltbl">Show preview</button>`:fullT);
   }
-  return weekCard()+`<div class="card">${who}</div><div class="card row2">${seg}${vw}<span class="mut">${daily?'Today ('+TODAYNAME+')':'Week 47 · Mon to today'} · overall ${avg}%</span></div>${body}`;
+  return weekCard()+`<div class="card">${who}</div><div class="card row2">${seg}${vw}<span class="mut">${daily?'Today ('+TODAYNAME+')':'Week '+isoWeek(TODAY)+' · goal so far, Mon to today'} · overall ${avg}%</span></div>${body}`;
 }
 
 function note(text,to){S.notes.unshift({text,to,d:TODAYS})}
 const WEEKDAYS_S=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-function ensureDraft(){if(!S.dS){S.dS=JSON.parse(JSON.stringify(SCHED));S.dT=JSON.parse(JSON.stringify(TGT));}}
-function isDirty(){return !!S.dS&&(JSON.stringify(S.dS)!==JSON.stringify(SCHED)||JSON.stringify(S.dT)!==JSON.stringify(TGT));}
+function ensureDraft(){if(!S.dS){S.dS=JSON.parse(JSON.stringify(SCHED));S.dT=JSON.parse(JSON.stringify(TGT));S.dA=JSON.parse(JSON.stringify(ANS_W));}WEEKDAYS_S.forEach(d=>{if(!S.dS[d])S.dS[d]=[]});}
+function isDirty(){return !!S.dS&&(JSON.stringify(S.dS)!==JSON.stringify(SCHED)||JSON.stringify(S.dT)!==JSON.stringify(TGT)||JSON.stringify(S.dA)!==JSON.stringify(ANS_W));}
 function performNav(n){if(n.a==='screen'){S.screen=n.v;S.msg='';S.fullTbl=false;if(n.v==='notes')S.seen=visNotes().length;}else if(n.a==='switch'){S.started=false;}}
 function askHtml(){return `<div class="overlay"><div class="sheet"><h3>Save changes?</h3><p class="mut">You changed the targets or the schedule. Save them before you leave?</p><button class="pri" data-a="saveset">Save changes</button><button class="pri ghost" data-a="discardset">Discard</button><button class="ghostbtn" data-a="cancelnav">Keep editing</button></div></div>`;}
 function settingsScreen(){
@@ -542,33 +559,46 @@ function settingsScreen(){
   const cats=CAT_ORDER,dS=S.dS,dT=S.dT;
   const bar=isDirty()?`<div class="dirty"><span><b>Unsaved changes</b></span><div class="row2"><button class="ghostbtn" data-a="discardset">Discard</button><button class="pri" data-a="saveset">Save changes</button></div></div>`:'';
   const tg=cats.map(c=>`<div class="tcell" style="--c:${COL[c]}"><span><i class="tdot"></i>${c}</span><input type="number" min="0" data-tg="${e(c)}" value="${dT[c]}"></div>`).join('');
+  const ag=cats.filter(c=>c!=='Movie').map(c=>`<div class="tcell" style="--c:${COL[c]}"><span><i class="tdot"></i>${c}</span><input type="number" min="0" data-ag="${e(c)}" value="${S.dA[c]||0}"></div>`).join('');
   const days=WEEKDAYS_S.map(d=>`<div class="daycard"><div class="row2" style="justify-content:space-between"><b>${d}</b><small class="mut">${dS[d].length} ${dS[d].length===1?'category':'categories'}</small></div><div class="pilltg-wrap">${cats.map(c=>`<button class="pilltg ${dS[d].includes(c)?'on':''}" style="--c:${COL[c]}" data-a="sday" data-d="${d}" data-c="${e(c)}">${c}</button>`).join('')}</div></div>`).join('');
-  return `${bar}<div class="card"><h3>Daily target</h3><p class="mut">How many entries each category needs per day. Weekly goals update automatically.</p><div class="tgrid">${tg}</div></div><div class="card"><h3>Weekly schedule</h3><p class="mut">Tap a category to add or remove it on that day. Nothing changes until you save.</p>${days}</div><div class="card"><h3>Appearance</h3><button class="ghostbtn" data-a="darkmode">${localStorage.getItem('qnb_dark')==='1'?'Switch to light':'Switch to dark'}</button></div><div class="card"><button class="pri ghost" data-a="resetsettings">Reset to default</button></div>`;
+  return `${bar}<div class="card"><h3>Daily target</h3><p class="mut">How many entries each category needs per day. Weekly goals update automatically.</p><div class="tgrid">${tg}</div></div><div class="card"><h3>Weekly schedule</h3><p class="mut">Tap a category to add or remove it on that day (up to 5 per day). Nothing changes until you save.</p>${days}</div><div class="card"><h3>Weekly answer goal</h3><p class="mut">How many of your partner's entries each of you should answer per week.</p><div class="tgrid">${ag}</div></div><div class="card"><h3>Appearance</h3><button class="ghostbtn" data-a="darkmode">${localStorage.getItem('qnb_dark')==='1'?'Switch to light':'Switch to dark'}</button></div><div class="card"><button class="pri ghost" data-a="resetsettings">Reset to default</button></div>`;
 }
 // ---------- backend (Google Apps Script web app) ----------
 const API='https://script.google.com/macros/s/AKfycbytB-S-YJ_R8ty6N83gkzUwBcU0y-GrRNT96oIkW0hehhk8vsnThBoncVwWEsGo7RpNdA/exec';
 const CLIENT_ID='356720291040-f136kpq5a2p7uq60lo7ev2alcmm5q51o.apps.googleusercontent.com';
 let ID_TOKEN=null, REMOTE=null;
+function applyState(d){
+  d.waiting=(d.waiting||[]).filter(x=>x.date>=MON);
+  REMOTE=d;
+  S.notes=(d.notices||[]).map(n=>({text:n.text,to:'both',d:n.at}));
+  if(d.words&&d.words.length){BANK.length=0;d.words.forEach(w=>BANK.push(w));}
+  if(d.schedule){Object.keys(SCHED).forEach(k=>delete SCHED[k]);Object.assign(SCHED,d.schedule);}
+  if(d.targets){Object.keys(TGT).forEach(k=>delete TGT[k]);Object.assign(TGT,d.targets);}
+  if(d.answerGoals)Object.keys(d.answerGoals).forEach(k=>{ANS_W[k]=Number(d.answerGoals[k])||0});
+  ENTRIES.length=0;
+  const cats=Object.keys(CATS);
+  (d.entries||[]).forEach(x=>{
+    const low=String(x.by||'').toLowerCase();
+    const u=x.c==='Analyze Data'?'prompt':(low==='bella'||low==='qaulan'?low:'prompt');
+    const v=Object.assign({},x.v);
+    if(x.c==='Analyze Data'&&x.date===TODAYS&&d.picture)v.pic={src:d.picture,name:''};
+    ENTRIES.push({id:x.row*100+cats.indexOf(x.c)+1,d:x.date,u:u,c:x.c,v:v,row:x.row,sd:x.sd||undefined});
+  });
+  return true;
+}
 function loadState(light){
   return jsonp({action:'state',light:light?'1':'0',token:ID_TOKEN}).then(d=>{
+    if(d.code==='auth'){sessionExpired(d.error);return false}
     if(d.error){S.msg=d.error;return false}
-    d.waiting=(d.waiting||[]).filter(x=>x.date>=MON);
-    REMOTE=d;
-    S.notes=d.notices.map(n=>({text:n.text,to:'both',d:n.at}));
-    if(d.words&&d.words.length){BANK.length=0;d.words.forEach(w=>BANK.push(w));}
-    Object.keys(SCHED).forEach(k=>delete SCHED[k]);Object.assign(SCHED,d.schedule);
-    Object.keys(TGT).forEach(k=>delete TGT[k]);Object.assign(TGT,d.targets);
-    ENTRIES.length=0;
-    const cats=Object.keys(CATS);
-    d.entries.forEach(x=>{
-      const low=String(x.by||'').toLowerCase();
-      const u=x.c==='Analyze Data'?'prompt':(low==='bella'||low==='qaulan'?low:'prompt');
-      const v=Object.assign({},x.v);
-      if(x.c==='Analyze Data'&&x.date===TODAYS&&d.picture)v.pic={src:d.picture,name:''};
-      ENTRIES.push({id:x.row*100+cats.indexOf(x.c)+1,d:x.date,u:u,c:x.c,v:v,row:x.row,sd:x.sd||undefined});
-    });
-    return true;
+    return applyState(d);
   }).catch(()=>{S.msg='Could not reach the server. Check your connection.';return false});
+}
+// Called when the Google sign-in has run out (it lasts 1 hour)
+function sessionExpired(msg){
+  ID_TOKEN=null;REMOTE=null;localStorage.removeItem('qnb_session');
+  S.wantMode=S.wantMode||S.mode;S.started=false;S.signing=true;S.busy=false;
+  S.msg=msg||'Your session expired. Please sign in again.';
+  render();
 }
 function jsonp(params){
   return new Promise((resolve,reject)=>{
@@ -582,8 +612,30 @@ function jsonp(params){
     document.body.appendChild(sc);
   });
 }
+// Every change asks the server to send the fresh data back in the same reply (one round trip instead of two)
+function afterApi(r){
+  if(r&&r.code==='auth'){sessionExpired(r.error);return r}
+  if(r&&r.state)applyState(r.state);
+  return r;
+}
 function api(body){
-  return jsonp(Object.assign({token:ID_TOKEN},body)).catch(err=>({error:'Could not reach the server ('+err.message+'). Try again.'}));
+  if(ID_TOKEN&&jwtExp(ID_TOKEN)<Date.now()){sessionExpired();return Promise.resolve({error:'Your session expired. Please sign in again.'})}
+  return jsonp(Object.assign({token:ID_TOKEN,withState:'1'},body)).then(afterApi).catch(err=>({error:'Could not reach the server ('+err.message+'). Try again.'}));
+}
+// Large data (pictures) goes by POST, because a URL can only hold a few KB
+function apiPost(body){
+  if(ID_TOKEN&&jwtExp(ID_TOKEN)<Date.now()){sessionExpired();return Promise.resolve({error:'Your session expired. Please sign in again.'})}
+  return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({token:ID_TOKEN,withState:'1'},body))})
+    .then(r=>r.json()).then(afterApi).catch(err=>({error:'Upload failed ('+err.message+'). Try again.'}));
+}
+// Shrinks a photo to max 1600px JPEG before upload
+function shrinkImage(file){
+  return new Promise((res,rej)=>{
+    const url=URL.createObjectURL(file),img=new Image();
+    img.onload=()=>{const sc=Math.min(1,1600/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);res(c.toDataURL('image/jpeg',0.85).split(',')[1])};
+    img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('Could not read that image. Try a JPG or PNG.'))};
+    img.src=url;
+  });
 }
 function initGsi(){
   if(!window.google||!google.accounts){setTimeout(initGsi,300);return}
@@ -612,7 +664,7 @@ function handleRedirect(){
   const want=sessionStorage.getItem('qnb_nonce');
   if(want&&jwtPayload(tok).nonce!==want){S.signing=true;S.msg='Sign-in could not be confirmed. Please try again.';return false}
   S.wantMode=sessionStorage.getItem('qnb_want')||S.wantMode;
-  S.signing=true;S.started=false;
+  S.signing=true;S.started=false;S.busy=true;
   onCred({credential:tok});
   return true;
 }
@@ -621,13 +673,14 @@ function saveSession(){if(!ID_TOKEN||!REMOTE)return;localStorage.setItem('qnb_se
 function restoreSession(){
   let ss=null;try{ss=JSON.parse(localStorage.getItem('qnb_session')||'null')}catch(err){}
   if(!ss||!ss.token||ss.exp<Date.now()+60000)return;
-  ID_TOKEN=ss.token;S.started=true;S.mode=ss.mode||'bella';S.by=ss.by||'bella';S.screen=ss.screen||'home';
-  loadState().then(ok=>{if(!ok){ID_TOKEN=null;S.started=false;localStorage.removeItem('qnb_session')}render()});
+  ID_TOKEN=ss.token;S.busy=true;S.mode=ss.mode||'bella';S.by=ss.by||'bella';S.screen=ss.screen||'home';
+  loadState().then(ok=>{S.busy=false;if(ok){S.started=true}else if(ID_TOKEN){ID_TOKEN=null;localStorage.removeItem('qnb_session')}render()});
 }
 function onCred(resp){
   ID_TOKEN=resp.credential;
   loadState().then(ok=>{
-    if(!ok){S.signing=true;render();return}
+    S.busy=false;
+    if(!ok){if(ID_TOKEN){S.signing=true;render()}return}
     const who=REMOTE.user.toLowerCase();
     if(S.wantMode&&S.wantMode!=='combined'&&S.wantMode!==who){S.msg='This is '+REMOTE.user+"'s account. Choose "+REMOTE.user+' to continue.';ID_TOKEN=null;S.signing=true;render();return}
     S.signing=false;S.started=true;S.mode=S.wantMode==='combined'?'combined':who;S.by=who;S.screen='home';S.msg='';saveSession();render();
@@ -635,9 +688,16 @@ function onCred(resp){
 }
 const REVIEW_CATS=['Vocabulary','Slang','Idiom','Phrasal Verb','Expression','Grammar'];
 const SRS_INT=[1,3,7,14,30];
-const srsGet=()=>{try{return JSON.parse(localStorage.getItem('qnb_srs')||'{}')}catch(err){return {}}};
-const srsSet=o=>localStorage.setItem('qnb_srs',JSON.stringify(o));
-const favGet=()=>{try{return JSON.parse(localStorage.getItem('qnb_fav')||'[]')}catch(err){return []}};
+// Review progress and favourites are kept per person (Bella and Qaulan no longer share them on one device)
+function perUser(base,def){
+  const k=base+'_'+(S.by||'bella');
+  if(localStorage.getItem(k)===null&&localStorage.getItem(base)!==null)localStorage.setItem(k,localStorage.getItem(base));
+  try{return JSON.parse(localStorage.getItem(k)||def)}catch(err){return JSON.parse(def)}
+}
+const srsGet=()=>perUser('qnb_srs','{}');
+const srsSet=o=>localStorage.setItem('qnb_srs_'+(S.by||'bella'),JSON.stringify(o));
+const favGet=()=>perUser('qnb_fav','[]');
+const favSet=o=>localStorage.setItem('qnb_fav_'+(S.by||'bella'),JSON.stringify(o));
 function addDays(d,n){const x=new Date(d+'T12:00:00');x.setDate(x.getDate()+n);return ds(x)}
 function wordOf(en){return String(en.v[CATS[en.c].gsrc]||'').trim()}
 function topicOf(w){const b=BANK.find(x=>x.w===String(w).toLowerCase());return b&&b.t?b.t:'Other'}
@@ -662,6 +722,17 @@ function reviewPool(){
   return ENTRIES.filter(x=>REVIEW_CATS.includes(x.c)&&rvWordOf(x)).map(x=>rvCard(x.id)).filter(Boolean);
 }
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+// Three choices (A, B, C): the right word plus two others, same category first. Fixed per card.
+function rvOptions(c){
+  const rv=S.rv;rv.opts=rv.opts||{};
+  if(rv.opts[rv.i])return rv.opts[rv.i];
+  const seen=new Set([c.word.toLowerCase()]),pool=reviewPool();
+  const take=(list,n)=>{const out=[];for(const x of shuffle(list.slice())){if(out.length>=n)break;const k=String(x.word||'').toLowerCase();if(!k||seen.has(k))continue;seen.add(k);out.push(x.word)}return out};
+  let d=take(pool.filter(x=>x.cat===c.cat),2);
+  if(d.length<2)d=d.concat(take(BANK.filter(b=>b.c===c.cat).map(b=>({word:b.w})),2-d.length));
+  if(d.length<2)d=d.concat(take(pool,2-d.length));
+  return rv.opts[rv.i]=shuffle([c.word,...d]);
+}
 function startReview(ids){
   if(ids){S.rv={cards:ids,i:0,reveal:false,ok:[],no:[],checked:null};return}
   const srs=srsGet(),fav=favGet();
@@ -729,10 +800,12 @@ function reviewScreen(){
   if(quiz&&!rv.reveal){
     const canBlank=ex&&hasKw(ex,word);
     const prompt=canBlank?blankIt(ex,word):e(c.meaning);
-    body=`<div class="mut">${canBlank?'Fill in the missing word':(c.cat==='Grammar'?'Name the grammar for this rule':'Type the word that means')}</div><div style="font-size:19px;margin:12px 0;line-height:1.5">${prompt}</div><input id="rvq" placeholder="Type the word"><button class="pri" data-a="rv_check">Check</button>`;
+    const opts=rvOptions(c);
+    body=`<div class="mut">${canBlank?'Pick the missing word':(c.cat==='Grammar'?'Which grammar matches this rule?':'Which word means this?')}</div><div style="font-size:19px;margin:12px 0;line-height:1.5">${prompt}</div><div class="opts">${opts.map((o,i)=>`<button class="opt" data-a="rv_pick" data-v="${e(o)}"><b>${'ABC'[i]}</b><span>${e(o)}</span></button>`).join('')}</div><p class="mut keyhint">Tip: press A, B or C on your keyboard.</p>`;
   } else if(quiz){
     const res=rv.checked;
-    body=`<div class="${res&&res.ok?'msg':'warn'}">${res?(res.ok?'Correct':'Not quite'):'Answer'}${res&&!res.ok&&res.typed?': you wrote "'+e(res.typed)+'"':''}</div><div style="font-size:24px;font-weight:800;margin-top:10px">${e(word)}</div>${info}`;
+    const opts=rvOptions(c);
+    body=`<div class="${res&&res.ok?'msg':'warn'}">${res?(res.ok?'Correct!':'Not quite. The answer is "'+e(word)+'".'):'The answer is "'+e(word)+'".'}</div><div class="opts">${opts.map((o,i)=>{const right=o.toLowerCase()===word.toLowerCase(),picked=res&&String(res.typed).toLowerCase()===o.toLowerCase();return `<div class="opt ${right?'right':picked?'wrong':''}"><b>${'ABC'[i]}</b><span>${e(o)}</span></div>`}).join('')}</div>${info}`;
   } else if(!rv.reveal){
     body=`<div class="mut">Recall this</div><div style="font-size:28px;font-weight:800;margin-top:8px">${e(word)}</div>`;
   } else {
@@ -740,6 +813,7 @@ function reviewScreen(){
   }
   let actions;
   if(!rv.reveal)actions=quiz?'<button class="ghostbtn" data-a="rv_reveal" style="margin-top:12px">Show answer</button>':'<button class="pri" data-a="rv_reveal" style="margin-top:14px">Show meaning</button>';
+  else if(quiz&&rv.checked)actions=`<button class="pri" data-a="${rv.checked.ok?'rv_ok':'rv_no'}" style="margin-top:14px">Next card</button><p class="mut" style="text-align:center;margin:8px 0 0">${rv.checked.ok?'Counted as remembered.':'This word comes back tomorrow.'}</p>`;
   else actions=`<div class="row2" style="margin-top:14px"><button class="pri" data-a="rv_ok">Remembered</button><button class="pri ghost" data-a="rv_no">Need practice</button></div><p class="mut" style="text-align:center;margin:8px 0 0">or swipe right / left</p>`;
   const star=`<button class="ghostbtn" data-a="rv_fav" data-w="${e(word.toLowerCase())}">${isFav?'Saved':'Save word'}</button>`;
   return head+`<div class="card" id="rvcard"><div class="row2" style="justify-content:space-between"><b>Card ${rv.i+1} of ${total}</b><span class="pill" style="background:${COL[c.cat]||'var(--soft)'}">${e(c.cat)}</span></div><div class="bar" style="margin:12px 0"><i style="width:${Math.round(rv.i/total*100)}%"></i></div><div style="text-align:center;padding:14px 6px">${body}</div>${actions}</div><div class="card row2" style="justify-content:space-between">${star}<small class="mut">Remembered ${rv.ok.length} · Need practice ${rv.no.length}</small><button class="ghostbtn" data-a="rv_new">New 20</button></div>`;
@@ -771,7 +845,7 @@ function weekStats(){
   const remembered=Object.values(srsGet()).filter(r=>r.lastOk&&r.last>=MON&&r.last<=TODAYS).length;
   let worst=null;
   CAT_ORDER.forEach(c=>{
-    const goal=DAYS_OF(c)*TGT[c]*us.length;if(!goal)return;
+    const goal=DAYS_SO_FAR(c)*TGT[c]*us.length;if(!goal)return;
     const got=us.reduce((a,u)=>a+subsN(u,c,'week'),0);
     const p=pct(got,goal);
     if(!worst||p<worst.p)worst={c:c,p:p};
@@ -832,12 +906,13 @@ function doSubmit(){
     C.f.forEach(([k,,kind])=>{if(kind!=='auto'&&S.f[k]!==undefined)values[k]=String(S.f[k]).trim()});
     const payload=S.cat==='Analyze Data'?{action:'analysis',text:values[ownKey(S.cat,by)]||''}:{action:'submit',cat:S.cat,values:values,lateDay:S.lateDay};
     const tempId=Date.now();
+    if(S.cat==='Analyze Data'&&!promptRow().v.pic){S.msg="Upload today's picture first.";return}
     if(S.cat!=='Analyze Data'){ENTRIES.push({id:tempId,d:TODAYS,u:by,c:S.cat,v:Object.assign({},values),row:null,pending:true,sd:S.lateDay||undefined})}
     S.f={};S.lateDay=null;S.msg='Saving…';render();
     api(payload).then(r=>{
       if(r.error){ENTRIES.splice(ENTRIES.findIndex(x=>x.id===tempId),1);S.msg=r.error;render();return}
       S.msg=S.cat==='Analyze Data'?'Analysis saved.':'Saved. Your partner can now answer.';
-      return loadState(true).then(render);
+      render();
     });
     return;
   }
@@ -871,6 +946,7 @@ const visNotes=()=>S.notes.filter(n=>S.mode==='combined'||n.to===S.mode||n.to===
 const LOGO_BIG='<svg viewBox="0 0 40 40" width="72" height="72" aria-hidden="true"><rect width="40" height="40" rx="12" style="fill:#B9A58F"/><path d="M8 11h24a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-9l-5 4v-4H8a3 3 0 0 1-3-3V14a3 3 0 0 1 3-3z" style="fill:#fff"/><text x="20" y="24.5" text-anchor="middle" font-family="Poppins,system-ui,sans-serif" font-weight="800" font-size="9.5" letter-spacing="0.3" style="fill:#B9A58F">QnB</text></svg>';
 const MODE_CARDS=[['bella','Bella','Your own learning space','#f7b8d2'],['qaulan','Qaulan','Your own learning space','#a7cdf0'],['combined','Combined','Study together and see both of you','#F8F4EC']];
 function welcomeScreen(){
+  if(S.busy)return `<div class="welcome"><div class="wlogo">${LOGO_BIG}</div><h1>Signing you in…</h1><div class="loading"><div class="spin" role="status" aria-label="Loading"></div><p class="mut">Loading your words. This can take a few seconds.</p></div></div>`;
   if(S.signing)return `<div class="welcome"><div class="wlogo">${LOGO_BIG}</div><h1>Sign in with Google</h1><p class="mut">Only Bella and Qaulan can enter.</p><button class="pri" data-a="googlesignin" style="margin-top:18px;width:100%;max-width:320px">Sign in with Google</button>${S.msg?`<div class="warn" style="margin-top:14px">${e(S.msg)}</div>`:''}<button class="ghostbtn" data-a="backwelcome" style="margin-top:14px">Back</button></div>`;
   return `<div class="welcome"><div class="wlogo">${LOGO_BIG}</div><h1>Welcome to English with QnB</h1><p class="mut">Learn and grow every day!</p><h3>What mode will you choose?</h3><div class="modes">${MODE_CARDS.map(([v,n,d,c])=>`<button class="mode-card" style="background:${c};border:1px solid #E7DFD2" data-a="choose" data-v="${v}"><b>${n}</b><span>${d}</span></button>`).join('')}</div></div>`;
 }
@@ -901,17 +977,21 @@ function render(){
 }
 document.addEventListener('click',ev=>{
   const t=ev.target.closest('[data-a]');if(!t)return;
-  const a=t.dataset.a,v=t.dataset.v;
+  const a=t.dataset.a,v=t.dataset.v,id=Number(t.dataset.id);
+  // Warn before throwing away text typed in the Input form
+  const leaving=(a==='todo'&&v!==S.cat)||(a==='cat'&&v!==S.cat)||['late','src','switch','backtoday'].includes(a);
+  if(leaving&&S.screen==='input'&&Object.values(S.f||{}).some(x=>String(x||'').trim())&&!confirm('You have text that is not submitted yet. Leave and lose it?'))return;
   if(!['saveset','discardset','cancelnav'].includes(a)&&isDirty()&&S.screen==='settings'&&(a==='switch'||(a==='screen'&&v!=='settings'))){S.askNav={a,v};render();return;}
-  if(a==='saveset'&&REMOTE){ensureDraft();const sd=S.dS,dt=S.dT;api({action:'saveSchedule',schedule:sd,targets:dt}).then(r=>{if(r.error){S.msg=r.error;render();return}S.dS=null;S.dT=null;S.msg='Changes saved to the sheet.';return loadState().then(()=>{if(S.askNav){const n=S.askNav;S.askNav=null;performNav(n)}render()})});return;}
-  if(a==='saveset'){ensureDraft();Object.keys(S.dS).forEach(d=>SCHED[d]=S.dS[d].slice());Object.keys(S.dT).forEach(c=>TGT[c]=S.dT[c]);S.dS=null;S.dT=null;S.msg='Changes saved.';if(S.askNav){const n=S.askNav;S.askNav=null;performNav(n);}}
-  else if(a==='discardset'){S.dS=null;S.dT=null;S.msg='Changes discarded.';if(S.askNav){const n=S.askNav;S.askNav=null;performNav(n);}}
+  if(a==='saveset'&&REMOTE){ensureDraft();const sd=S.dS,dt=S.dT,da=S.dA;S.msg='Saving…';render();api({action:'saveSchedule',schedule:sd,targets:dt,answerGoals:da}).then(r=>{if(r.error){S.msg=r.error;render();return}S.dS=null;S.dT=null;S.dA=null;S.msg='Changes saved to the sheet.';if(S.askNav){const n=S.askNav;S.askNav=null;performNav(n)}render()});return;}
+  if(a==='saveset'){ensureDraft();Object.keys(S.dS).forEach(d=>SCHED[d]=S.dS[d].slice());Object.keys(S.dT).forEach(c=>TGT[c]=S.dT[c]);Object.keys(S.dA).forEach(c=>ANS_W[c]=S.dA[c]);S.dS=null;S.dT=null;S.dA=null;S.msg='Changes saved.';if(S.askNav){const n=S.askNav;S.askNav=null;performNav(n);}}
+  else if(a==='discardset'){S.dS=null;S.dT=null;S.dA=null;S.msg='Changes discarded.';if(S.askNav){const n=S.askNav;S.askNav=null;performNav(n);}}
   else if(a==='cancelnav'){S.askNav=null;}
   if(a==='mode'){S.mode=v;if(v!=='combined')S.by=v;S.msg='';}
   else if(a==='screen'){S.screen=v;S.msg='';S.fullTbl=false;setTimeout(saveSession,0);if(v==='notes')S.seen=visNotes().length;}
   else if(a==='cat'){S.screen='input';S.cat=v;S.f={};S.gen=null;S.msg='';}
+  else if(a==='goanswer'){S.screen='input';S.inTab='answer';S.msg='';}
   else if(a==='todo'){S.cat=v;S.f={};S.gen=null;S.msg='';S.lateDay=null;}
-  else if(a==='by'){S.by=v;S.msg='';}
+  else if(a==='by'){if(!REMOTE)S.by=v;S.msg='';}
   else if(a==='src'){S.src=v;S.gen=null;S.f={};}
   else if(a==='pick'){pickBank(v);}
   else if(a==='submit'){doSubmit();}
@@ -924,19 +1004,20 @@ document.addEventListener('click',ev=>{
   else if(a==='rv_favonly'){S.rvFav=!S.rvFav;startReview();}
   else if(a==='rv_mode'){S.rvMode=v;if(S.rv){S.rv.reveal=false;S.rv.checked=null}}
   else if(a==='rv_reveal'){S.rv.reveal=true;S.rv.checked=null;}
+  else if(a==='rv_pick'){const c=rvCard(S.rv.cards[S.rv.i]);if(c){S.rv.checked={ok:String(v).toLowerCase()===c.word.toLowerCase(),typed:v};S.rv.reveal=true;}}
   else if(a==='rv_check'){const c=rvCard(S.rv.cards[S.rv.i]);const typed=(document.getElementById('rvq')||{value:''}).value;if(c){S.rv.checked={ok:quizOk(typed,c.word),typed:typed.trim()};S.rv.reveal=true;}}
   else if(a==='rv_ok'||a==='rv_no'){rvAnswer(a==='rv_ok')}
-  else if(a==='rv_fav'){const f=favGet(),w=t.dataset.w;localStorage.setItem('qnb_fav',JSON.stringify(f.includes(w)?f.filter(x=>x!==w):[...f,w]));}
+  else if(a==='rv_fav'){const f=favGet(),w=t.dataset.w;favSet(f.includes(w)?f.filter(x=>x!==w):[...f,w]);}
   else if(a==='rv_new'){startReview();}
   else if(a==='rv_missed'){startReview(S.rv.no.slice());}
   else if(a==='csv'){exportCsv();S.msg='CSV downloaded.';}
   else if(a==='darkmode'){localStorage.setItem('qnb_dark',localStorage.getItem('qnb_dark')==='1'?'0':'1');S.msg='Appearance changed.';}
-  else if(a==='sday'){ensureDraft();const d=t.dataset.d,c=t.dataset.c;const on=S.dS[d].includes(c);S.dS[d]=CAT_ORDER.filter(x=>x===c?!on:S.dS[d].includes(x));}
-  else if(a==='resetsettings'){ensureDraft();S.dS=JSON.parse(JSON.stringify(DEF_SCHED));S.dT=JSON.parse(JSON.stringify(DEF_TGT));S.msg='Defaults loaded. Save changes to apply them.';}
+  else if(a==='sday'){ensureDraft();const d=t.dataset.d,c=t.dataset.c;const on=S.dS[d].includes(c);if(!on&&S.dS[d].length>=5){S.msg='A day can have up to 5 categories. Remove one first.';}else{S.dS[d]=CAT_ORDER.filter(x=>x===c?!on:S.dS[d].includes(x));}}
+  else if(a==='resetsettings'){ensureDraft();S.dS=JSON.parse(JSON.stringify(DEF_SCHED));S.dT=JSON.parse(JSON.stringify(DEF_TGT));S.dA=JSON.parse(JSON.stringify(DEF_ANS));S.msg='Defaults loaded. Save changes to apply them.';}
   else if(a==='choose'){S.wantMode=v;S.signing=true;S.msg='';}
   else if(a==='backwelcome'){S.signing=false;S.msg='';}
   else if(a==='googlesignin'){startGoogleLogin();return;}
-  else if(a==='remote_answer'){const w=REMOTE.waiting[+t.dataset.i];const el=document.getElementById('ra_'+t.dataset.i);const txt=el?el.value.trim():'';if(!txt){S.msg='Write your answer first.';}else{api({action:'answer',cat:w.cat,row:w.row,text:txt}).then(r=>{S.msg=r.error||'Answer saved.';return loadState()}).then(render);}}
+  else if(a==='remote_answer'){const w=REMOTE.waiting[+t.dataset.i];const el=document.getElementById('ra_'+t.dataset.i);const txt=el?el.value.trim():'';if(!txt){S.msg='Write your answer first.';}else{S.msg='Saving…';api({action:'answer',cat:w.cat,row:w.row,text:txt}).then(r=>{S.msg=r.error||'Answer saved.';render()});}}
   else if(a==='switch'){S.started=false;S.signing=false;ID_TOKEN=null;REMOTE=null;localStorage.removeItem('qnb_session');}
   else if(a==='fulltbl'){S.fullTbl=!S.fullTbl;}
   else if(a==='late'){S.cat=t.dataset.c;S.lateDay=t.dataset.d;S.f={};S.gen=null;S.msg='';S.screen='input';S.inTab='today';}
@@ -946,10 +1027,10 @@ document.addEventListener('click',ev=>{
   else if(a==='logcat'){S.logCat=v;S.fullTbl=false;}
   else if(a==='startEdit'){S.editId=id;}
   else if(a==='cancelEdit'){S.editId=null;}
-  else if(a==='savEdit'){const en=ENTRIES.find(x=>x.id===id);if(en){const values={};CATS[en.c].f.forEach(([k,,kind])=>{if(kind!=='auto'&&(!/^[qb](Ex|J|A)$/.test(k)||k===ownKey(en.c,S.by))){const el=document.getElementById('ed_'+k);if(el)values[k]=el.value.trim()}});S.editId=null;api({action:'edit',cat:en.c,row:en.row,values:values}).then(r=>{S.msg=r.error||'Changes saved.';return loadState(true)}).then(render);return;}}
-  else if(a==='delEntry'){const en=ENTRIES.find(x=>x.id===id);if(en&&confirm('Delete this entry? This cannot be undone.')){api({action:'delete',cat:en.c,row:en.row}).then(r=>{S.msg=r.error||'Entry deleted.';return loadState(true)}).then(render);return;}}
+  else if(a==='savEdit'){const en=ENTRIES.find(x=>x.id===id);if(en){const values={};CATS[en.c].f.forEach(([k,,kind])=>{if(kind!=='auto'&&(!/^[qb](Ex|J|A)$/.test(k)||k===ownKey(en.c,S.by))){const el=document.getElementById('ed_'+k);if(el)values[k]=el.value.trim()}});S.editId=null;S.msg='Saving…';render();api({action:'edit',cat:en.c,row:en.row,values:values}).then(r=>{S.msg=r.error||'Changes saved.';render()});return;}}
+  else if(a==='delEntry'){const en=ENTRIES.find(x=>x.id===id);if(en&&confirm('Delete this entry? This cannot be undone.')){S.msg='Deleting…';render();api({action:'delete',cat:en.c,row:en.row}).then(r=>{S.msg=r.error||'Entry deleted.';render()});return;}}
   else if(a==='refresh'){S.msg='Refreshing…';loadState(true).then(ok=>{S.msg=ok?'Up to date.':S.msg;render()});return;}
-  else if(a==='ans'&&REMOTE){const en=ENTRIES.find(x=>x.id===id);const val=(document.getElementById('a'+id)||{value:''}).value.trim();if(!en||!val){S.msg='Write your answer first.';}else{api({action:'answer',cat:en.c,row:en.row,text:val}).then(r=>{S.msg=r.error||'Answer saved.';return loadState()}).then(render);return;}}
+  else if(a==='ans'&&REMOTE){const en=ENTRIES.find(x=>x.id===id);const val=(document.getElementById('a'+id)||{value:''}).value.trim();if(!en||!val){S.msg='Write your answer first.';}else{S.msg='Saving…';render();api({action:'answer',cat:en.c,row:en.row,text:val}).then(r=>{S.msg=r.error||'Answer saved.';render()});return;}}
   else if(a==='ans'){const id=+t.dataset.id,k=t.dataset.k;const val=(document.getElementById('a'+id)||{value:''}).value.trim();const en=ENTRIES.find(x=>x.id===id);if(en&&val){en.v[k]=val;note(NAME[S.by]+' answered an entry in '+en.c,en.u);S.msg='Answer saved ';}}
   render();
 });
@@ -960,12 +1041,28 @@ document.addEventListener('input',ev=>{
 document.addEventListener('change',ev=>{
   if(ev.target.id==='bt'){S.bt=ev.target.value;render();}
   if(ev.target.id==='rvt'){S.rvTopic=ev.target.value;startReview();render();}
+  if(ev.target.dataset&&ev.target.dataset.ag){ensureDraft();S.dA[ev.target.dataset.ag]=Math.max(0,parseInt(ev.target.value,10)||0);render();}
   if(ev.target.dataset&&ev.target.dataset.tg){ensureDraft();S.dT[ev.target.dataset.tg]=Math.max(0,parseInt(ev.target.value,10)||0);render();}
-  if(ev.target.id==='picfile'){const f=ev.target.files[0];if(f){const rd=new FileReader();rd.onload=()=>{
-    if(REMOTE){const data=String(rd.result).split(',')[1];api({action:'picture',name:f.name,mime:f.type||'image/png',data:data}).then(r=>{S.msg=r.error||'Picture uploaded. Both of you see the same one.';return loadState()}).then(render);return;}
-    promptRow().v.pic={src:rd.result,name:f.name};S.msg='Picture uploaded. Both of you see the same one.';render();};rd.readAsDataURL(f);}}
+  if(ev.target.id==='picfile'){const f=ev.target.files[0];if(!f)return;
+    if(REMOTE){S.msg='Uploading picture…';render();shrinkImage(f).then(data=>apiPost({action:'picture',name:f.name.replace(/\.[^.]+$/,'')+'.jpg',mime:'image/jpeg',data:data})).then(r=>{S.msg=r.error||'Picture uploaded. Both of you see the same one.';render()}).catch(err=>{S.msg=err.message;render()});return;}
+    const rd=new FileReader();rd.onload=()=>{promptRow().v.pic={src:rd.result,name:f.name};S.msg='Picture uploaded. Both of you see the same one.';render();};rd.readAsDataURL(f);}
 });
-document.addEventListener('keydown',ev=>{if(ev.target.id==='bq'&&ev.key==='Enter'){S.bq=ev.target.value;render();}});
+document.addEventListener('keydown',ev=>{
+  if(ev.target.id==='bq'&&ev.key==='Enter'){S.bq=ev.target.value;render();return}
+  if(S.screen==='review'&&S.rvMode==='quiz'&&S.rv&&!S.rv.reveal&&!/INPUT|TEXTAREA|SELECT/.test(ev.target.tagName)){
+    const i={a:0,b:1,c:2,'1':0,'2':1,'3':2}[String(ev.key).toLowerCase()];
+    const btn=i===undefined?null:document.querySelectorAll('button.opt')[i];
+    if(btn){ev.preventDefault();btn.click()}
+  }
+});
+// Reload after midnight (so "today" is right) and sign out when the 1-hour Google sign-in runs out
+function dayAndSessionCheck(){
+  const typing=S.screen==='input'&&Object.values(S.f||{}).some(x=>String(x||'').trim());
+  if(ds(new Date())!==TODAYS&&!typing){location.reload();return}
+  if(S.started&&ID_TOKEN&&jwtExp(ID_TOKEN)<Date.now())sessionExpired();
+}
+setInterval(dayAndSessionCheck,60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)dayAndSessionCheck()});
 if(!handleRedirect())restoreSession();
 let lastY=0;
 window.addEventListener('scroll',()=>{const y=window.scrollY,tb=document.getElementById('tabs');if(!tb)return;if(y>lastY+10)tb.classList.add('hide');else if(y<lastY-10)tb.classList.remove('hide');lastY=y},{passive:true});
