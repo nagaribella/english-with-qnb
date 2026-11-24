@@ -524,7 +524,7 @@ const API='https://script.google.com/macros/s/AKfycbytB-S-YJ_R8ty6N83gkzUwBcU0y-
 const CLIENT_ID='356720291040-f136kpq5a2p7uq60lo7ev2alcmm5q51o.apps.googleusercontent.com';
 let ID_TOKEN=null, REMOTE=null;
 function loadState(light){
-  return fetch(API+'?action=state&token='+encodeURIComponent(ID_TOKEN)+(light?'&light=1':'')).then(r=>r.json()).then(d=>{
+  return jsonp({action:'state',light:light?'1':'0',token:ID_TOKEN}).then(d=>{
     if(d.error){S.msg=d.error;return false}
     d.waiting=(d.waiting||[]).filter(x=>x.date>=MON);
     REMOTE=d;
@@ -544,8 +544,20 @@ function loadState(light){
     return true;
   }).catch(()=>{S.msg='Could not reach the server. Check your connection.';return false});
 }
+function jsonp(params){
+  return new Promise((resolve,reject)=>{
+    const cb='qnb_'+Date.now()+'_'+Math.floor(Math.random()*1e6);
+    const sc=document.createElement('script');
+    const timer=setTimeout(()=>{cleanup();reject(new Error('timed out'))},25000);
+    function cleanup(){clearTimeout(timer);delete window[cb];sc.remove()}
+    window[cb]=d=>{cleanup();resolve(d)};
+    sc.onerror=()=>{cleanup();reject(new Error('network'))};
+    sc.src=API+'?callback='+encodeURIComponent(cb)+'&payload='+encodeURIComponent(JSON.stringify(params));
+    document.body.appendChild(sc);
+  });
+}
 function api(body){
-  return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({token:ID_TOKEN},body))}).then(r=>r.json()).catch(err=>({error:'Could not reach the server ('+err.message+'). Check your connection and try again.'}));
+  return jsonp(Object.assign({token:ID_TOKEN},body)).catch(err=>({error:'Could not reach the server ('+err.message+'). Try again.'}));
 }
 function initGsi(){
   if(!window.google||!google.accounts){setTimeout(initGsi,300);return}
