@@ -228,6 +228,18 @@ textarea.rvs{width:100%;font:inherit;padding:11px 12px;border-radius:14px;border
 .aibox{background:var(--soft);border-radius:14px;padding:12px 14px;text-align:left}
 .aibox p{margin:6px 0}
 .aibox .ghostbtn{margin:6px 6px 0 0}
+.aipanel{background:var(--soft);border-radius:14px;padding:12px 14px;margin:8px 0 14px}
+.aipanel .item{border-bottom:1px dashed var(--line)}
+.aipanel .item:last-of-type{border-bottom:0}
+.pickrow{cursor:pointer;border-radius:10px;padding:9px 8px!important;flex-wrap:nowrap}
+.pickrow:hover,.pickrow:focus-visible{background:var(--card);outline:none}
+.pickrow.on{background:var(--card);box-shadow:inset 0 0 0 2px var(--a)}
+.pickrow.used{opacity:.55;cursor:default}
+.okline{color:#2f7d4f;font-weight:600}
+body.dark .okline{color:#7fd6a2}
+#lookslot{min-height:20px;margin:4px 0 2px;font-size:13px}
+#lookslot .ghostbtn{margin:4px 6px 0 0}
+.autotag{font-size:11px;font-weight:700;color:var(--a);margin-left:6px;text-transform:none;letter-spacing:0}
 /* ---- sidebar cleanup (desktop) ---- */
 .tabs button{position:relative}
 @media(min-width:761px){
@@ -325,6 +337,7 @@ const ENTRIES=SEED.map((x,i)=>({id:i+1,d:x.d,u:x.u,c:x.c,v:x.v}));
 
 const S={mode:'bella',by:'bella',screen:'home',dash:'daily',cat:'Idiom',src:'bank',f:{},gen:null,msg:'',logCat:'Idiom',day:null,dv:null,bq:'',bt:'All',dview:'table',fixKey:null,lateDay:null,inTab:'today',fullTbl:false,queue:[],notes:[],limit:false,seen:0,started:false};
 const SRC=[['bank','Words Bank'],['own','Own finding']];
+const srcList=()=>AI_ON()?[...SRC,['ai','✨ AI picks']]:SRC;
 
 // ---- counting helpers ----
 const inRange=(d,r)=>r==='day'?d===TODAYS:r==='week'?(d>=MON&&d<=TODAYS):true;
@@ -442,11 +455,18 @@ function inputToday(){
   const sameTopic=curT?`<p class="mut">Same topic: ${e(curT)}</p><div class="chips">${BANK.filter(b=>b.t===curT&&C.bank.includes(b.c)&&b.w!==String(S.f[C.gsrc]).toLowerCase()).slice(0,6).map(b=>`<button data-a="pick" data-v="${e(b.w)}">${e(b.w)}</button>`).join('')}</div>`:'';
   const bq=(S.bq||'').toLowerCase();
   const bankList=(C.bank.length&&S.src==='bank')?BANK.filter(b=>C.bank.includes(b.c)&&(S.bt==='All'||b.t===S.bt)&&(!bq||b.w.includes(bq)||b.m.toLowerCase().includes(bq))&&!ENTRIES.some(x=>x.c===S.cat&&String(x.v[C.gsrc]||'').toLowerCase()===b.w)).slice(0,10).map(b=>`<div class="item" data-a="pick" data-v="${e(b.w)}"><span><b>${e(b.w)}</b> <small class="mut">${e(b.t)}</small><br><small>${e(b.m)}${b.idm?' · '+e(b.idm):''}</small></span></div>`).join('')||'<p class="mut">No matching words left for you here.</p>':'';
-  const srcSeg=C.bank.length?`<div class="seg">${SRC.map(([v,l])=>`<button class="${S.src===v?'on':''}" data-a="src" data-v="${v}">${l}</button>`).join('')}</div>`:'';
-  const fields=C.f.filter(x=>x[2]!=='auto').map(([k,label,kind])=>{
+  if(S.src==='ai'&&!AI_ON())S.src='own';
+  const srcSeg=C.bank.length?`<div class="seg">${srcList().map(([v,l])=>`<button class="${S.src===v?'on':''}" data-a="src" data-v="${v}">${l}</button>`).join('')}</div>`:'';
+  const fl=C.f.filter(x=>x[2]!=='auto');
+  if(S.cat==='Expression'){const wi=fl.findIndex(x=>x[0]==='word'),ui=fl.findIndex(x=>x[0]==='ung');if(wi>ui&&ui>=0)fl.splice(ui,0,fl.splice(wi,1)[0]);}
+  const fields=fl.map(([k,label,kind])=>{
     if(kind==='in'){
-      const auto=(S.src==='bank'&&k===C.gsrc&&C.bank.length)?'<small class="mut">picked from Words Bank above, or type here</small>':'';
-      return `<label>${e(label)}</label><input data-f="${k}" value="${e(S.f[k]||'')}" placeholder="Type ${e(label)}">${auto}`;
+      const isWord=k===C.gsrc&&C.bank.length;
+      const auto=(S.src==='bank'&&isWord)?'<small class="mut">picked from Words Bank above, or type here</small>':'';
+      const slot=((S.src==='own'||S.cat==='Expression')&&isWord)?`<div id="lookslot">${lookHtml()}</div>`:'';
+      const tag=C.bank.length&&S.autoFill&&AUTO_KEYS.includes(k)&&String(S.f[k]||'').trim()?'<span class="autotag">auto-filled</span>':'';
+      const ph=S.cat==='Expression'&&isWord?'Type the English expression':isWord&&S.src==='own'?'Type the '+e(label.toLowerCase())+' you found':S.cat==='Expression'&&C.bank.length&&AI_ON()?'Filled in by AI':'Type '+e(label);
+      return `<label>${e(label)}${tag}</label><input data-f="${k}" value="${e(S.f[k]||'')}" placeholder="${ph}" ${isWord?'autocomplete="off"':''}>${auto}${slot}`;
     }
     if(kind==='gen')return `<div class="genbox"><span>${e(label)}</span><b>${e(S.gen?.[k]||'—')}</b><small>auto</small></div>`;
     const owner=ownerOf(k);
@@ -460,7 +480,7 @@ function inputToday(){
   const msg=S.msg?`<div class="msg">${e(S.msg)}</div>`:'';
   const rows=ENTRIES.filter(x=>x.c===S.cat&&x.d===TODAYS).sort((a,b)=>b.id-a.id);
   return msg+`<div class="card"><h3>Daily input · ${e(C.tab)}</h3>${who}<label>Pick today's category (one only)</label><div class="todos">${todo}</div></div>
-  <div class="card"><label>Source</label>${srcSeg}${bankCtl}${bankList}${sameTopic}<div id="dupslot">${dupBox}</div>${fields}${genBtn}${aiBox('form')}<button id="subbtn" class="pri" data-a="submit" ${dupE?'disabled':''}>Submit to ${e(C.tab)}</button></div>
+  <div class="card"><label>Source</label>${srcSeg}${S.src==='ai'&&C.bank.length?aiPicksHtml():''}${bankCtl}${bankList}${sameTopic}<div id="dupslot">${dupBox}</div>${fields}${genBtn}${aiBox('form')}<button id="subbtn" class="pri" data-a="submit" ${dupE?'disabled':''}>Submit to ${e(C.tab)}</button></div>
   <div class="card"><h3>Today in ${e(C.tab)}</h3>${table(S.cat,rows)}</div>`;
 }
 
@@ -766,8 +786,8 @@ function rvCard(key){
   const en=ENTRIES.find(x=>x.id===key);if(!en)return null;
   const g=en.c==='Grammar',w=rvWordOf(en);
   return {key:key,word:w,cat:en.c,
-    meaning:g?(en.v.rules||''):(en.v.meaning||''),
-    extra:g?(en.v.when?'When to use: '+en.v.when:''):(en.c==='Expression'&&en.v.ung?'Ungkapan: '+en.v.ung:''),
+    meaning:g?(en.v.rules||''):(en.c==='Expression'?(en.v.ung||en.v.meaning||''):(en.v.meaning||'')),
+    extra:g?(en.v.when?'When to use: '+en.v.when:''):(en.c==='Expression'&&en.v.ung&&en.v.meaning?'Ekspresi: '+en.v.meaning:''),
     ex:en.v.qEx||en.v.bEx||'',topic:topicOf(w)};
 }
 function reviewPool(){
@@ -1049,6 +1069,74 @@ function runAiCheck(where){
   });
 }
 
+// ---------- Own finding: auto-fill meaning (Words Bank first, then AI) ----------
+const AUTO_KEYS=['meaning','cat','ung'];
+function fillWordFields(x,setWord){
+  const C=CATS[S.cat],keys=C.f.map(f=>f[0]);
+  const set=(k,v)=>{if(!keys.includes(k)||v==null)return;S.f[k]=v;const el=document.querySelector(`[data-f="${k}"]`);if(el)el.value=v;};
+  if(setWord)set(C.gsrc,x.word);
+  set('meaning',x.meaning||'');
+  if(S.cat==='Vocabulary')set('cat',x.pos||'');
+  if(S.cat==='Expression')set('ung',x.ung||'');
+  syncDup();
+}
+function lookHtml(){
+  const C=CATS[S.cat],w=String(S.f[C.gsrc]||'').trim(),L=S.look&&S.look.w===w?S.look:null;
+  const left=L&&L.left!=null?` <span class="mut">· ${L.left} AI word helps left today</span>`:'';
+  const what=S.cat==='Expression'?'Ungkapan and Ekspresi':'meaning';
+  if(!w||!L)return `<small class="mut">${AI_ON()?'Type it, then press Enter or Tab. The '+what+' fill'+(S.cat==='Expression'?'':'s')+' in by itself.':'If it is in the Words Bank, the meaning fills in by itself.'}</small>`;
+  if(L.st==='loading')return `<small class="mut">✨ Filling in the ${what}…</small>`;
+  if(L.st==='bank')return '<small class="okline">✓ Meaning filled from the Words Bank. Edit it if you like.</small>';
+  if(L.st==='ai')return `<small><span class="okline">✨ ${S.cat==='Expression'?'Ungkapan and Ekspresi':'Meaning'} filled by AI. Check and edit if needed.</span>${left}</small>`;
+  if(L.st==='off')return '<small class="mut">Not in the Words Bank. Type the meaning yourself.</small>';
+  if(L.st==='suggest')return `<small>Did you mean <b>${e(L.sug)}</b>?</small><br><button class="ghostbtn" data-a="lookUse">Use “${e(L.sug)}”</button><button class="ghostbtn" data-a="lookKeep">Keep “${e(w)}”</button>`;
+  if(L.st==='err')return `<small class="mut">${e(L.msg)}</small><br><button class="ghostbtn" data-a="lookRetry">Try again</button>`;
+  return '';
+}
+function setLook(o){S.look=o;const sl=document.getElementById('lookslot');if(sl)sl.innerHTML=lookHtml();}
+function refreshTags(){document.querySelectorAll('[data-f]').forEach(el=>{const lab=el.previousElementSibling;if(!lab||lab.tagName!=='LABEL')return;const t=lab.querySelector('.autotag');const want=S.autoFill&&AUTO_KEYS.includes(el.dataset.f)&&String(el.value||'').trim();if(want&&!t)lab.insertAdjacentHTML('beforeend','<span class="autotag">auto-filled</span>');if(!want&&t)t.remove();});}
+function ownLookup(force){
+  const C=CATS[S.cat];if(!C.bank.length||(S.src!=='own'&&S.cat!=='Expression'))return;
+  const w=String(S.f[C.gsrc]||'').trim();
+  if(!w){setLook(null);return}
+  if(!force&&S.look&&S.look.w===w&&S.look.st!=='err')return;
+  if(!force&&String(S.f.meaning||'').trim()&&!S.autoFill)return;   // you typed your own meaning: leave it
+  const hit=BANK.find(b=>b.w===w.toLowerCase()&&C.bank.includes(b.c));
+  if(hit&&!(S.cat==='Expression'&&AI_ON())){fillWordFields(S.cat==='Expression'?{meaning:'',ung:hit.m}:{meaning:hit.m,pos:hit.pos||'',ung:''});S.autoFill=true;setLook({st:'bank',w:w});refreshTags();return}
+  if(!AI_ON()){setLook({st:'off',w:w});return}
+  setLook({st:'loading',w:w});
+  const cat=S.cat,src=S.src,before=String(S.f.meaning||'');
+  api({action:'aiLookup',cat:cat,word:w}).then(r=>{
+    if(S.cat!==cat||S.src!==src||String(S.f[C.gsrc]||'').trim()!==w)return;   // you changed the word meanwhile
+    if(r.error){setLook({st:'err',w:w,msg:r.error});return}
+    const x=r.result;
+    if(!x.valid&&x.suggestion&&x.suggestion.toLowerCase()!==w.toLowerCase()){setLook({st:'suggest',w:w,sug:x.suggestion,res:x,left:r.left});return}
+    if(String(S.f.meaning||'')!==before)x=Object.assign({},x,{meaning:S.f.meaning});   // you typed a meaning while waiting: keep yours
+    fillWordFields(x,false);S.autoFill=true;setLook({st:'ai',w:w,left:r.left});refreshTags();
+  });
+}
+
+// ---------- AI picks: 5 words from one random topic ----------
+function aiPicksHtml(){
+  const P=(S.picks||{})[S.cat],cl=S.cat.toLowerCase().replace(/y$/,'ie');
+  if(!P)return `<div class="aipanel"><p class="mut" style="margin:0 0 10px">AI picks a random topic and suggests 5 new ${e(cl)}s for it, with ${S.cat==='Expression'?'the Ungkapan and Ekspresi':'the meaning'} filled in. You only write the example.</p><button class="pri ghost" style="margin:0" data-a="aiPicks">✨ Suggest 5 ${e(cl)}s</button></div>`;
+  if(P.loading)return '<div class="aipanel"><div class="loading" style="margin:6px 0"><div class="spin" role="status" aria-label="Loading"></div><p class="mut">Choosing a topic and finding words…</p></div></div>';
+  if(P.error)return `<div class="aipanel"><div class="warn" style="margin-top:0">${e(P.error)}</div><button class="ghostbtn" data-a="aiPicks">Try again</button></div>`;
+  const cur=String(S.f[CATS[S.cat].gsrc]||'').trim().toLowerCase();
+  const list=P.words.map((x,i)=>{const used=ENTRIES.some(en=>en.c===S.cat&&String(en.v.word||'').trim().toLowerCase()===x.word.toLowerCase());
+    return `<div class="item pickrow ${cur===x.word.toLowerCase()?'on':''} ${used?'used':''}" data-a="aipick" data-i="${i}" tabindex="0" role="button"><span><b>${e(x.word)}</b>${x.pos?` <small class="mut">${e(x.pos)}</small>`:''}<br>${S.cat==='Expression'?`<small>${e(x.ung)}</small><br><small class="mut">${e(x.meaning)}</small>`:`<small>${e(x.meaning)}${x.ung?' · <i>'+e(x.ung)+'</i>':''}</small>`}</span>${used?'<small class="mut">added ✓</small>':sayBtn(x.word)}</div>`}).join('');
+  return `<div class="aipanel"><div class="row2" style="justify-content:space-between;margin-bottom:4px"><span><small class="mut">Topic</small><br><b>${e(P.topic)}</b></span><button class="ghostbtn" data-a="aiPicks">↻ New topic</button></div>${list}<p class="mut" style="font-size:12px;margin:8px 0 0">Tap a word to use it.${P.left!=null?' '+P.left+' AI word helps left today.':''}</p></div>`;
+}
+function loadAiPicks(){
+  const cat=S.cat;S.picks=S.picks||{};
+  const prev=S.picks[cat]&&S.picks[cat].topic;
+  S.picks[cat]={loading:true};render();
+  api({action:'aiPicks',cat:cat,notTopic:prev||''}).then(r=>{
+    S.picks[cat]=r.error?{error:r.error}:{topic:r.topic,words:r.words||[],left:r.left};
+    if(S.cat===cat)render();
+  });
+}
+
 // ---------- mistakes log (Input → Mistakes) ----------
 function mistakesTab(){
   const f=S.mf||{};
@@ -1154,7 +1242,7 @@ function dupKey(c){const C=CATS[c];return C.gsrc||(C.f.find(x=>x[2]==='in')||[])
 function dupFor(c,f){const k=dupKey(c);if(!k)return null;const v=String(f[k]||'').trim().toLowerCase();if(!v)return null;return ENTRIES.find(x=>x.c===c&&String(x.v[k]||'').trim().toLowerCase()===v)||null}
 function syncDup(){const d=dupFor(S.cat,S.f);const sl=document.getElementById('dupslot');if(sl)sl.innerHTML=d?`<div class="warn">${e(dupMsg(d))}</div>`:'';const b=document.getElementById('subbtn');if(b)b.disabled=!!d;}
 function dupMsg(x){return `"${x.v[dupKey(x.c)]}" is already in the ${x.c} log, added by ${NAME[x.u]||'the daily prompt'} on ${x.d===TODAYS?'today':x.d}. Please choose another word.`}
-function pickBank(v){const hit=BANK.find(b=>b.w===v);S.f[CATS[S.cat].gsrc]=v;if(hit){S.f.meaning=hit.m;S.f.cat=hit.pos||'';}S.msg='';}
+function pickBank(v){if(S.cat==='Expression'){const hit=BANK.find(b=>b.w===v);S.f.word=v;S.f.ung=hit?hit.m:'';S.f.meaning='';S.autoFill=true;S.look=null;S.msg='';setTimeout(()=>ownLookup(true),0);return}const hit=BANK.find(b=>b.w===v);S.f[CATS[S.cat].gsrc]=v;if(hit){S.f.meaning=hit.m;S.f.cat=hit.pos||'';}S.msg='';}
 function doSubmit(){
   const C=CATS[S.cat],by=S.by;
   if(REMOTE){
@@ -1250,7 +1338,7 @@ document.addEventListener('click',ev=>{
   else if(a==='goanswer'){S.screen='input';S.inTab='answer';S.msg='';}
   else if(a==='todo'){S.ai=null;S.cat=v;S.f={};S.gen=null;S.msg='';S.lateDay=null;}
   else if(a==='by'){if(!REMOTE)S.by=v;S.msg='';}
-  else if(a==='src'){S.src=v;S.gen=null;S.f={};}
+  else if(a==='src'){S.src=v;S.gen=null;S.f={};S.look=null;S.autoFill=false;}
   else if(a==='pick'){pickBank(v);}
   else if(a==='submit'){doSubmit();}
   else if(a==='dash'){S.dash=v;}
@@ -1275,6 +1363,14 @@ document.addEventListener('click',ev=>{
   else if(a==='aiCheck'){runAiCheck(t.dataset.w);return}
   else if(a==='aiUse'){if(S.ai&&S.ai.res&&S.ai.where.indexOf('dr:')===0){S.dr=S.dr||{};S.dr[S.ai.where.slice(3)]=S.ai.res.better;S.ai=null;S.msg='Updated. Read it once more, then save.';}
   else if(S.ai&&S.ai.res){S.f[aiFormKey()]=S.ai.res.better;S.ai=null;S.msg='Updated. Read it once more, then submit.';}}
+  else if(a==='aiPicks'){loadAiPicks();return}
+  else if(a==='aipick'){const P=(S.picks||{})[S.cat],x=P&&P.words&&P.words[+t.dataset.i];
+    if(x){if(ENTRIES.some(en=>en.c===S.cat&&String(en.v.word||'').trim().toLowerCase()===x.word.toLowerCase())){S.msg='"'+x.word+'" is already in your log.';}
+    else{const own=ownKey(S.cat,S.by);S.f={};S.f[CATS[S.cat].gsrc]=x.word;S.f.meaning=x.meaning;if(S.cat==='Vocabulary')S.f.cat=x.pos;if(S.cat==='Expression')S.f.ung=x.ung;S.autoFill=true;S.msg='';S.ai=null;
+      render();const el=document.querySelector(`[data-f="${own}"]`);if(el){el.focus();el.scrollIntoView({block:'center',behavior:'smooth'})}return}}}
+  else if(a==='lookRetry'){ownLookup(true);return}
+  else if(a==='lookUse'){const C=CATS[S.cat];if(S.look&&S.look.sug){S.f[C.gsrc]=S.look.sug;const el=document.querySelector(`[data-f="${C.gsrc}"]`);if(el)el.value=S.look.sug;syncDup();ownLookup(true);}return}
+  else if(a==='lookKeep'){if(S.look&&S.look.res){fillWordFields(S.look.res,false);S.autoFill=true;setLook({st:'ai',w:S.look.w,left:S.look.left});refreshTags();}return}
   else if(a==='prtab'){S.prTab=v;S.msg='';}
   else if(a==='goreview'){S.screen='review';S.prTab='review';}
   else if(a==='goduel'){S.screen='review';S.prTab='duel';}
@@ -1320,9 +1416,13 @@ document.addEventListener('click',ev=>{
 });
 document.addEventListener('input',ev=>{
   const k=ev.target.dataset&&ev.target.dataset.f;
-  if(k){S.f[k]=ev.target.value;syncDup();if(S.ai&&S.ai.where==='form'&&!S.ai.loading&&k===aiFormKey())S.ai=null;}
+  if(k){S.f[k]=ev.target.value;syncDup();
+    if(CATS[S.cat]&&k===CATS[S.cat].gsrc&&S.look&&S.look.w!==ev.target.value.trim()&&S.look.st!=='loading')setLook(null);
+    if(AUTO_KEYS.includes(k)&&S.autoFill&&ev.target.dataset.f==='meaning'){S.autoFill=false;refreshTags();}
+   if(S.ai&&S.ai.where==='form'&&!S.ai.loading&&k===aiFormKey())S.ai=null;}
 });
 document.addEventListener('change',ev=>{
+  if(ev.target.dataset&&CATS[S.cat]&&ev.target.dataset.f===CATS[S.cat].gsrc&&S.src==='own'&&S.screen==='input'){S.f[ev.target.dataset.f]=ev.target.value;ownLookup(false);}
   if(ev.target.id==='bt'){S.bt=ev.target.value;render();}
   if(ev.target.id==='rvt'){S.rvTopic=ev.target.value;startReview();render();}
   if(ev.target.dataset&&ev.target.dataset.ag){ensureDraft();S.dA[ev.target.dataset.ag]=Math.max(0,parseInt(ev.target.value,10)||0);render();}
@@ -1336,6 +1436,7 @@ document.addEventListener('input',ev=>{const k=ev.target.dataset&&ev.target.data
 document.addEventListener('keydown',ev=>{
   if(ev.target.id==='rvq'&&ev.key==='Enter'){ev.preventDefault();const b=document.querySelector('[data-a=rv_check]');if(b)b.click();return}
   if(ev.target.id==='bq'&&ev.key==='Enter'){S.bq=ev.target.value;render();return}
+  if(ev.key==='Enter'&&ev.target.classList&&ev.target.classList.contains('pickrow')){ev.preventDefault();ev.target.click();return}
   if(ev.target.id==='lq'&&ev.key==='Enter'){S.lq=ev.target.value;render();const el=document.getElementById('lq');if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length)}return}
   if(S.screen==='review'&&(S.prTab==='duel'?(S.duel&&!S.duel.done&&S.duel.picked===null):(S.rvMode!=='word'&&S.rv&&!S.rv.reveal))&&!/INPUT|TEXTAREA|SELECT/.test(ev.target.tagName)){
     const i={a:0,b:1,c:2,'1':0,'2':1,'3':2}[String(ev.key).toLowerCase()];
