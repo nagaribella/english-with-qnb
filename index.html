@@ -362,7 +362,13 @@ const PICS=[
 ];
 const WD=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 const picIdx=()=>Math.floor((TODAY-new Date(2026,0,1))/86400000)%PICS.length;
-function promptRow(){let p=ENTRIES.find(x=>x.u==='prompt'&&x.c==='Analyze Data'&&x.d===TODAYS);if(!p){p={id:Date.now()+1,d:TODAYS,u:'prompt',c:'Analyze Data',v:{qA:'',bA:'',pic:null}};ENTRIES.push(p)}return p}
+// The Analyze Data row of a day (today by default). A late row has its day in sd.
+function promptRow(day){day=day||TODAYS;let p=ENTRIES.find(x=>x.c==='Analyze Data'&&(x.sd||x.d)===day);if(!p){p={id:Date.now()+1,d:day,u:'prompt',c:'Analyze Data',v:{qA:'',bA:'',pic:null}};ENTRIES.push(p)}return p}
+// The picture of a row: stored as {src,name} for today, or as a plain link for other days
+function picOf(row){const p=row&&row.v.pic;if(!p)return null;return typeof p==='string'?{src:p,name:''}:p}
+const fmtDay=d=>{const x=new Date(d+'T12:00:00');return DNAME[x.getDay()]+', '+x.getDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][x.getMonth()]};
+// Shown at the top of the form while you are filling a missed day
+function lateBanner(){return S.lateDay?`<div class="msg">⏰ Filling a missed target for ${e(fmtDay(S.lateDay))}. It counts for that day. <button class="ghostbtn" data-a="backtoday" style="margin:0 0 0 8px">Back to today</button></div>`:''}
 function chartSVG(p){
   const W=600,H=260,L=44,B=30,T=14,n=p.labels.length;
   const mx=Math.max(...p.series.flatMap(s=>s[1]))*1.1;
@@ -375,19 +381,20 @@ function chartSVG(p){
   return `<svg viewBox="0 0 ${W} ${H}" width="100%">${g}</svg>`;
 }
 function analyzeView(){
-  const row=promptRow(),p=row.v.pic,by=S.by,k=ownKey('Analyze Data',by),other=by==='bella'?'qaulan':'bella';
-  const picBlock=p?`<img src="${e(p.src)}" alt="Today's picture" style="width:100%;border-radius:14px;border:1px solid var(--line)"><p class="mut">Shared picture for both of you. ${e(p.name||'')}</p><label>Replace picture</label><input id="picfile" type="file" accept="image/*">`:`<p class="mut">Upload today's IELTS Task 1 picture. Both of you will see the same one.</p><label>Upload picture</label><input id="picfile" type="file" accept="image/*">`;
+  const late=S.lateDay,dayTxt=late?fmtDay(late):"today's";
+  const row=promptRow(late||TODAYS),p=picOf(row),by=S.by,k=ownKey('Analyze Data',by),other=by==='bella'?'qaulan':'bella';
+  const picBlock=p?`<img src="${e(p.src)}" alt="Picture to analyze" style="width:100%;border-radius:14px;border:1px solid var(--line)"><p class="mut">Shared picture for both of you. ${e(p.name||'')}</p><label>Replace picture</label><input id="picfile" type="file" accept="image/*">`:`<p class="mut">${late?'No picture was uploaded for '+e(dayTxt)+'. Upload one now':"Upload today's IELTS Task 1 picture"}. Both of you will see the same one.</p><label>Upload picture</label><input id="picfile" type="file" accept="image/*">`;
   const msg=S.msg?`<div class="msg">${e(S.msg)}</div>`:'';
   const who=S.mode==='combined'&&!REMOTE?`<div class="seg">${U.map(u=>`<button class="${by===u?'on':''}" data-a="by" data-v="${u}">${NAME[u]}</button>`).join('')}</div>`:'';
   const days=`<div class="chips">${WD.map(d=>`<button class="${(S.day||TODAYNAME)===d?'on':''}" data-a="day" data-v="${d}">${d.slice(0,3)}</button>`).join('')}</div>`;
   const todo=todayList().map(c=>{const dn=subsN(by,c,'day');return `<button class="todo ${S.cat===c?'on':''}" data-a="todo" data-v="${c}" style="--c:${COL[c]}"><span class="radio"></span><span>${c}</span><span class="tg">${dn}/${TGT[c]}</span><span class="bar" style="grid-column:1/-1"><i style="width:${pct(dn,TGT[c])}%"></i></span></button>`}).join('');
   const otherDone=row.v[ownKey('Analyze Data',other)]?'submitted ':'waiting';
-  return msg+`<div class="card">${who}<label>Pick today's category</label><div class="todos">${todo}</div></div>
-  <div class="card"><h3>Analyze Data · today's picture</h3>${picBlock}
+  return msg+lateBanner()+`<div class="card">${who}<label>Pick today's category</label><div class="todos">${todo}</div></div>
+  <div class="card"><h3>Analyze Data · ${late?'picture for '+e(dayTxt):"today's picture"}</h3>${picBlock}
   <label>Your analysis (${NAME[by]})</label><textarea data-f="${k}" style="width:100%;min-height:120px;border-radius:14px;padding:12px;font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink)" placeholder="Write your analysis">${e(S.f[k]||'')}</textarea>
   <div class="genbox"><span>${NAME[other]}'s analysis</span><span class="wait">${otherDone}</span></div>
   ${aiBox('form')}<button class="pri" data-a="submit">Submit analysis</button></div>
-  <div class="card"><h3>Today's analyses</h3>${table('Analyze Data',[row])}</div>`;
+  <div class="card"><h3>${late?'Analyses for '+e(dayTxt):"Today's analyses"}</h3>${table('Analyze Data',[row])}</div>`;
 }
 
 // ---- Home ----
@@ -410,9 +417,10 @@ function lateItems(u){
     const dt=new Date(TODAY);dt.setDate(dt.getDate()-i);const dstr=ds(dt);
     const day=DNAME[dt.getDay()];
     (SCHED[day]||[]).forEach(c=>{
-      if(c==='Analyze Data')return;
-      const have=ENTRIES.filter(x=>x.u===u&&x.c===c&&(x.sd||x.d)===dstr).length;
-      const short=TGT[c]-have;
+      const have=c==='Analyze Data'
+        ?ENTRIES.filter(x=>x.c===c&&(x.sd||x.d)===dstr&&String(x.v[ownKey(c,u)]||'').trim()).length
+        :ENTRIES.filter(x=>x.u===u&&x.c===c&&(x.sd||x.d)===dstr).length;
+      const short=(c==='Analyze Data'?1:(TGT[c]||0))-have;   // one analysis per day
       if(short>0)out.push({c,d:dstr,day,short});
     });
   }
@@ -479,7 +487,7 @@ function inputToday(){
   const genBtn='';
   const msg=S.msg?`<div class="msg">${e(S.msg)}</div>`:'';
   const rows=ENTRIES.filter(x=>x.c===S.cat&&x.d===TODAYS).sort((a,b)=>b.id-a.id);
-  return msg+`<div class="card"><h3>Daily input · ${e(C.tab)}</h3>${who}<label>Pick today's category (one only)</label><div class="todos">${todo}</div></div>
+  return msg+lateBanner()+`<div class="card"><h3>Daily input · ${e(C.tab)}</h3>${who}<label>Pick today's category (one only)</label><div class="todos">${todo}</div></div>
   <div class="card"><label>Source</label>${srcSeg}${S.src==='ai'&&C.bank.length?aiPicksHtml():''}${bankCtl}${bankList}${sameTopic}<div id="dupslot">${dupBox}</div>${fields}${genBtn}${aiBox('form')}<button id="subbtn" class="pri" data-a="submit" ${dupE?'disabled':''}>Submit to ${e(C.tab)}</button></div>
   <div class="card"><h3>Today in ${e(C.tab)}</h3>${table(S.cat,rows)}</div>`;
 }
@@ -643,7 +651,7 @@ function applyState(d){
     const low=String(x.by||'').toLowerCase();
     const u=x.c==='Analyze Data'?'prompt':(low==='bella'||low==='qaulan'?low:'prompt');
     const v=Object.assign({},x.v);
-    if(x.c==='Analyze Data'&&x.date===TODAYS&&d.picture)v.pic={src:d.picture,name:''};
+    if(x.c==='Analyze Data'&&(x.sd||x.date)===TODAYS&&d.picture)v.pic={src:d.picture,name:''};
     ENTRIES.push({id:x.row*100+cats.indexOf(x.c)+1,d:x.date,u:u,c:x.c,v:v,row:x.row,sd:x.sd||undefined});
   });
   return true;
@@ -1248,9 +1256,10 @@ function doSubmit(){
   if(REMOTE){
     const values={};
     C.f.forEach(([k,,kind])=>{if(kind!=='auto'&&S.f[k]!==undefined)values[k]=String(S.f[k]).trim()});
-    const payload=S.cat==='Analyze Data'?{action:'analysis',text:values[ownKey(S.cat,by)]||''}:{action:'submit',cat:S.cat,values:values,lateDay:S.lateDay};
+    const payload=S.cat==='Analyze Data'?{action:'analysis',text:values[ownKey(S.cat,by)]||'',lateDay:S.lateDay||''}:{action:'submit',cat:S.cat,values:values,lateDay:S.lateDay};
     const tempId=Date.now();
-    if(S.cat==='Analyze Data'&&!promptRow().v.pic){S.msg="Upload today's picture first.";return}
+    if(S.cat==='Analyze Data'&&!picOf(promptRow(S.lateDay||TODAYS))){S.msg=S.lateDay?'Upload the picture for that day first.':"Upload today's picture first.";return}
+    if(S.cat==='Analyze Data'&&!String(values[ownKey(S.cat,by)]||'').trim()){S.msg='Write your analysis first.';return}
     if(S.cat!=='Analyze Data'){ENTRIES.push({id:tempId,d:TODAYS,u:by,c:S.cat,v:Object.assign({},values),row:null,pending:true,sd:S.lateDay||undefined})}
     S.f={};S.lateDay=null;S.msg='Saving…';render();
     api(payload).then(r=>{
@@ -1260,7 +1269,7 @@ function doSubmit(){
     });
     return;
   }
-    if(S.cat==='Analyze Data'){const p=promptRow(),k=ownKey(S.cat,by),txt=String(S.f[k]||'').trim();if(!p.v.pic){S.msg='Upload today picture first';return}if(!txt){S.msg='Write your analysis first';return}p.v[k]=txt;note(NAME[by]+' saved today\'s analysis',by==='bella'?'qaulan':'bella');S.f={};S.msg='Analysis saved  Your partner can read it in the log.';return}
+    if(S.cat==='Analyze Data'){const p=promptRow(S.lateDay||TODAYS),k=ownKey(S.cat,by),txt=String(S.f[k]||'').trim();if(!picOf(p)){S.msg='Upload the picture first';return}if(!txt){S.msg='Write your analysis first';return}p.v[k]=txt;note(NAME[by]+' saved today\'s analysis',by==='bella'?'qaulan':'bella');S.f={};S.lateDay=null;S.msg='Analysis saved. Your partner can read it in the log.';return}
   const ins=C.f.filter(x=>x[2]==='in').map(x=>x[0]);
   if(ins.some(k=>!String(S.f[k]||'').trim())){S.msg='Fill every field first';return}
   const ok=ownKey(S.cat,by);
@@ -1428,8 +1437,8 @@ document.addEventListener('change',ev=>{
   if(ev.target.dataset&&ev.target.dataset.ag){ensureDraft();S.dA[ev.target.dataset.ag]=Math.max(0,parseInt(ev.target.value,10)||0);render();}
   if(ev.target.dataset&&ev.target.dataset.tg){ensureDraft();S.dT[ev.target.dataset.tg]=Math.max(0,parseInt(ev.target.value,10)||0);render();}
   if(ev.target.id==='picfile'){const f=ev.target.files[0];if(!f)return;
-    if(REMOTE){S.msg='Uploading picture…';render();shrinkImage(f).then(data=>apiPost({action:'picture',name:f.name.replace(/\.[^.]+$/,'')+'.jpg',mime:'image/jpeg',data:data})).then(r=>{S.msg=r.error||'Picture uploaded. Both of you see the same one.';render()}).catch(err=>{S.msg=err.message;render()});return;}
-    const rd=new FileReader();rd.onload=()=>{promptRow().v.pic={src:rd.result,name:f.name};S.msg='Picture uploaded. Both of you see the same one.';render();};rd.readAsDataURL(f);}
+    if(REMOTE){S.msg='Uploading picture…';render();shrinkImage(f).then(data=>apiPost({action:'picture',name:f.name.replace(/\.[^.]+$/,'')+'.jpg',mime:'image/jpeg',data:data,lateDay:S.cat==='Analyze Data'?(S.lateDay||''):''})).then(r=>{S.msg=r.error||'Picture uploaded. Both of you see the same one.';render()}).catch(err=>{S.msg=err.message;render()});return;}
+    const rd=new FileReader();rd.onload=()=>{promptRow(S.lateDay||TODAYS).v.pic={src:rd.result,name:f.name};S.msg='Picture uploaded. Both of you see the same one.';render();};rd.readAsDataURL(f);}
 });
 document.addEventListener('input',ev=>{const d=ev.target.dataset&&ev.target.dataset.dr;if(d){S.dr=S.dr||{};S.dr[d]=ev.target.value;if(S.ai&&S.ai.where==='dr:'+d&&!S.ai.loading)S.ai=null;}});
 document.addEventListener('input',ev=>{const k=ev.target.dataset&&ev.target.dataset.mf;if(k){S.mf=S.mf||{};S.mf[k]=ev.target.value}});
